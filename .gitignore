@@ -171,3 +171,6 @@ fastlane/readme.md
 
 # logs
 logs/
+
+# certifications
+*.crt

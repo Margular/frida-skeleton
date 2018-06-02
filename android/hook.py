@@ -7,7 +7,6 @@ import sys
 import time
 
 PROCESS = 'io.github.margular'
-SCRIPT = 'hook.js'
 LOG_PATH = os.path.join('logs', time.ctime()).replace(':', '_') + '.txt'
 
 def append_log(log_path, text):
@@ -30,7 +29,12 @@ def on_message(message, data):
 
 def main():
     process = frida.get_usb_device().attach(PROCESS)
-    script = process.create_script(open(SCRIPT).read())
+    js = 'Java.perform(function() {'
+    for (dirpath, dirnames, filenames) in os.walk('scripts'):
+        for filename in filenames:
+            js += open(os.path.join(dirpath, filename)).read()
+    js += '});'
+    script = process.create_script(js)
     script.on('message', on_message)
     print('[*] All code activated!')
     script.load()
