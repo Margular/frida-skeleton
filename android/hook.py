@@ -12,7 +12,7 @@ LOG_PATH = os.path.join('logs', time.ctime()).replace(':', '_') + '.txt'
 def append_log(log_path, text):
     log_dir = os.path.split(log_path)[0]
     os.makedirs(log_dir, mode = 0o700, exist_ok = True)
-    with open(log_path, 'a') as f:
+    with open(log_path, 'a', encoding = 'utf8') as f:
         f.write(text)
         f.write(os.linesep)
     print(text)
