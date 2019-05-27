@@ -174,3 +174,5 @@ logs/
 
 # certifications
 *.crt
+
+.idea/

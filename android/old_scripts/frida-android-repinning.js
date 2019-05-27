@@ -22,7 +22,7 @@ setTimeout(function(){
 
 	    // Load CAs from an InputStream
 	    console.log("[+] Loading our CA...")
-	    cf = CertificateFactory.getInstance("X.509");
+	    var cf = CertificateFactory.getInstance("X.509");
 	    
 	    try {
 	    	var fileInputStream = FileInputStream.$new("/data/local/tmp/cert-der.crt");
