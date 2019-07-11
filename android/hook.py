@@ -32,30 +32,37 @@ def on_message(message, data):
 # hook all following started apps automatically for hands free
 # hook_regexp: the app name regexp you want to hook with
 # init_hook_regexp: the app name regexp you want to init hook before hook following apps
-def hook_following_apps(hook_regexp=None, init_hook_regexp=None):
+def hook_following_apps(hook_regexp=None):
     # recording all apps first
     name_pool = set(_.name for _ in frida.get_usb_device().enumerate_processes())
 
     # init hook
-    if init_hook_regexp:
+    if hook_regexp:
         for name in name_pool:
-            for _ in init_hook_regexp:
+            for _ in hook_regexp:
                 if re.search(_, name):
                     print('init hook with <' + name + '>')
-                    hook(name)
+                    try:
+                        hook(name)
+                    except (frida.ProcessNotFoundError, frida.TransportError) as e:
+                        print(e)
                     break
 
     while True:
         time.sleep(0.1)
         name_pool_2 = set(_.name for _ in frida.get_usb_device().enumerate_processes())
+        if len(name_pool_2) == 0:
+            continue
         differ_names = name_pool_2 - name_pool
         for name in differ_names:
-            time.sleep(2)
-            print('Now hook <' + name + '>')
-            try:
-                hook(name)
-            except (frida.ProcessNotFoundError, frida.TransportError) as e:
-                print(e)
+            for _ in hook_regexp:
+                if re.search(_, name):
+                    time.sleep(1)
+                    print('Now hook <' + name + '>')
+                    try:
+                        hook(name)
+                    except (frida.ProcessNotFoundError, frida.TransportError) as e:
+                        print(e)
         name_pool = name_pool_2
 
 
@@ -73,7 +80,7 @@ def hook(name):
 
 
 def main():
-    hook_following_apps(init_hook_regexp=['^com\.huawei\.'])
+    hook_following_apps(hook_regexp=['^com\.huawei'])
 
 
 if __name__ == '__main__':
