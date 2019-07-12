@@ -4,9 +4,13 @@
 import frida
 import os
 import re
+import subprocess
+import sys
 import time
 
-LOG_PATH = os.path.join('logs', time.ctime()).replace(':', '_') + '.txt'
+
+def gen_log_path():
+    return os.path.join('logs', time.ctime()).replace(':', '_') + '.txt'
 
 
 def append_log(log_path, text):
@@ -26,14 +30,10 @@ def on_message(message, data):
     else:
         text = message
 
-    append_log(LOG_PATH, text)
+    append_log(gen_log_path(), text)
 
 
-# hook all following started apps automatically for hands free
-# hook_regexp: the app name regexp you want to hook with
-# init_hook_regexp: the app name regexp you want to init hook before hook following apps
-def hook_following_apps(hook_regexp=None):
-    # recording all apps first
+def hook_apps(hook_regexp=None):
     name_pool = set(_.name for _ in frida.get_usb_device().enumerate_processes())
 
     # init hook
@@ -48,6 +48,7 @@ def hook_following_apps(hook_regexp=None):
                         print(e)
                     break
 
+    # start hook infinitely
     while True:
         time.sleep(0.1)
         name_pool_2 = set(_.name for _ in frida.get_usb_device().enumerate_processes())
@@ -79,8 +80,54 @@ def hook(name):
     script.load()
 
 
+def check_frida_server():
+    try:
+        frida.get_usb_device().enumerate_processes()
+    except frida.ServerNotRunningError as e:
+        return False
+
+    return True
+
+
+def try_run_frida_server():
+    output = subprocess.run('adb shell ls /data/local/tmp', stdout=subprocess.PIPE, shell=True).stdout.decode()
+    frida_servers = []
+
+    for filename in output.split('\r\n'):
+        if filename.startswith('frida-server'):
+            frida_servers.append('/data/local/tmp/' + filename)
+
+    if len(frida_servers) == 0:
+        return False
+    elif len(frida_servers) == 1:
+        print('start ' + frida_servers[0])
+        subprocess.Popen('adb shell setsid ' + frida_servers[0], shell=True)
+    else:
+        print('select frida_server to start:\n')
+
+        for i in range(len(frida_servers)):
+            print('[{}] {}'.format(i, frida_servers[i]))
+
+        choice = input('your choice: ')
+        if not choice.isdigit() or int(choice) < 0:
+            print('invalid input')
+            sys.exit(-1)
+
+        print('start ' + frida_servers[0])
+        subprocess.Popen('adb shell setsid ' + frida_servers[int(choice)], shell=True)
+
+    time.sleep(5)
+    return True
+
+
 def main():
-    hook_following_apps(hook_regexp=['^com\.huawei'])
+    if not check_frida_server():
+        print('frida server has not been started yet! now try to start frida-server from /data/local/tmp...')
+        if not try_run_frida_server():
+            print('run frida server failed! you need to start it manually')
+            sys.exit(-1)
+
+    hook_apps(hook_regexp=['^com\.huawei'])
 
 
 if __name__ == '__main__':
