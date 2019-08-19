@@ -47,7 +47,7 @@ def hook_apps(regexp):
             if re.search(_, name):
                 try:
                     hook(name)
-                except (frida.ProcessNotFoundError, frida.TransportError) as e:
+                except Exception as e:
                     print(e)
                 finally:
                     break
@@ -69,7 +69,7 @@ def hook_apps(regexp):
                     time.sleep(1)
                     try:
                         hook(name)
-                    except (frida.ProcessNotFoundError, frida.TransportError) as e:
+                    except Exception as e:
                         print(e)
                     finally:
                         break
@@ -85,7 +85,8 @@ def hook(name):
     # Load all scripts under folder 'scripts'
     for (dirpath, dirnames, filenames) in os.walk('scripts'):
         for filename in filenames:
-            js += open(os.path.join(dirpath, filename)).read()
+            js += open(os.path.join(dirpath, filename), encoding="utf-8").read()
+            js += '\n'
 
     js += '});'
     script = process.create_script(js)
