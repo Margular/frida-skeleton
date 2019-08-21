@@ -9,17 +9,18 @@ import subprocess
 import sys
 import time
 
-
-def ctime_log_name():
-    return os.path.join('logs', time.ctime()).replace(':', '_') + '.txt'
+__LOG__ = time.strftime("%Y-%m-%d %H-%M-%S.log")
 
 
 def append_log(log_path, text):
+    text = text.strip()
+    if len(text) == 0:
+        return
     log_dir = os.path.split(log_path)[0]
     os.makedirs(log_dir, mode=0o700, exist_ok=True)
     with open(log_path, 'a', encoding='utf8') as f:
         f.write(text)
-        f.write(os.linesep)
+        f.write("\n")
     print(text)
 
 
@@ -31,7 +32,7 @@ def on_message(message, data):
     else:
         text = message
 
-    append_log(ctime_log_name(), text)
+    append_log(os.path.join("logs", __LOG__), text)
 
 
 def hook_apps(regexp):

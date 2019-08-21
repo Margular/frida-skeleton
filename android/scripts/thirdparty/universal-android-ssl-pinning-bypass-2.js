@@ -6,7 +6,7 @@ setTimeout(function(){
 
         ApiClient.checkTrustedRecursive.implementation = function(a1,a2,a3,a4,a5,a6) {
                 var sendString = Date();
-                sendString += " " + 'Bypassing SSL Pinning';
+                sendString += ' Bypassing SSL Pinning';
                 send(sendString);
 
                 var k = array_list.$new();
