@@ -21,13 +21,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btnSpeak:
-                Toast.makeText(getApplicationContext(), getBestLanguage() + " is the best"
+                Toast.makeText(getApplicationContext(), getBestLanguage("Python") + " is the best"
                         + " programming language of the world!", Toast.LENGTH_SHORT).show();
                 break;
         }
     }
 
-    private String getBestLanguage() {
-        return "Python";
+    private String getBestLanguage(String lang) {
+        return lang;
     }
 }

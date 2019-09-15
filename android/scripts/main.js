@@ -1,17 +1,7 @@
-//var MainActivity = Java.use("io.github.margular.MainActivity");
-//
-//MainActivity.getBestLanguage.implementation = function() {
-//    var sendString = Date();
-//    sendString += "  MainActivity.getBestLanguage()";
-//    send(sendString);
-//
-//    var bestLanguage = this.getBestLanguage();
-//    sendString += " -> " + bestLanguage;
-//    var newBestLanguage = "Python3";
-//    sendString += " => " + newBestLanguage;
-//    sendString += "\n";
-//    sendString += getStackTrace();
-//    send(sendString);
-//
-//    return newBestLanguage;
-//};
+var MainActivity = Java.use("io.github.margular.MainActivity");
+
+function getBestLanguage(lang){
+    return this.getBestLanguage("I don't know, but it's not PHP!!!");
+};
+
+ImplementationWrapper("MainActivity.getBestLanguage", getBestLanguage);

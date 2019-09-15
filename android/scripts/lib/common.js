@@ -27,3 +27,43 @@ function extractDeclaredFields(o) {
 
     return sb.toString();
 }
+
+function SendWithDate(data) {
+    send(Date() + " " + data);
+}
+
+function ImplementationWrapper(method, func) {
+    var params = [];
+
+    if (func.length > 0) {
+        for (var i = 0; i < func.length; i++) {
+            params[i] = "_param" + i + "_";
+        }
+    }
+
+    var impl = method + ".implementation = function (" + params.join() + ") {\n";
+    impl += "SendWithDate(\"";
+
+    // funcDetail for log function name and parameters
+    var funcDetail = method + "(\" + ";
+
+    if (params.length > 0) {
+        funcDetail += params[0];
+
+        for (var i = 1; i < func.length; i++) {
+            funcDetail += " + \", \" + " + params[i];
+        }
+    }
+
+    funcDetail += " + \")";
+
+    impl += funcDetail;
+    impl += "\");\n";
+
+    impl += "var ret = " + func.name + ".call(this, " + params.join() + ");\n";
+    impl += "SendWithDate(\"" + funcDetail + " => \" + ret);\n";
+    impl += "return ret;\n";
+    impl += "};\n";
+
+    eval(impl);
+}
