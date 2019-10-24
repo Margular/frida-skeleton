@@ -28,11 +28,21 @@ function extractDeclaredFields(o) {
     return sb.toString();
 }
 
-function SendWithDate(data) {
+function sendWithDate(data) {
     send(Date() + " " + data);
 }
 
-function ImplementationWrapper(method, func) {
+function implementationWrapper(method, func) {
+    // store func to global
+    if (global.hasOwnProperty("_func_index_"))
+        global["_func_index_"]++;
+    else
+        global["_func_index_"] = 0;
+
+    var func_index = global["_func_index_"];
+    var func_name = "_func_" + func_index + "_";
+    global[func_name] = func;
+
     var params = [];
 
     if (func.length > 0) {
@@ -42,7 +52,7 @@ function ImplementationWrapper(method, func) {
     }
 
     var impl = method + ".implementation = function (" + params.join() + ") {\n";
-    impl += "SendWithDate(\"";
+    impl += "sendWithDate(\"";
 
     // funcDetail for log function name and parameters
     var funcDetail = method + "(\" + ";
@@ -53,15 +63,21 @@ function ImplementationWrapper(method, func) {
         for (var i = 1; i < func.length; i++) {
             funcDetail += " + \", \" + " + params[i];
         }
-    }
+    } else
+        funcDetail += "\"\"";
 
     funcDetail += " + \")";
 
     impl += funcDetail;
     impl += "\");\n";
+    impl += "var ret = " + func_name + ".call(this";
 
-    impl += "var ret = " + func.name + ".call(this, " + params.join() + ");\n";
-    impl += "SendWithDate(\"" + funcDetail + " => \" + ret);\n";
+    if (params.length > 0)
+        impl += ", " + params.join() + ");\n";
+    else
+        impl += ");\n";
+
+    impl += "sendWithDate(\"" + funcDetail + " => \" + ret);\n";
     impl += "return ret;\n";
     impl += "};\n";
 

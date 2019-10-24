@@ -57,11 +57,9 @@ New style of Frida-skeleton:
 ```javascript
 var MainActivity = Java.use("io.github.margular.MainActivity");
 
-function getBestLanguage(lang){
-    return this.getBestLanguage("I don't know, but it's not PHP!!!");
-};
-
-ImplementationWrapper("MainActivity.getBestLanguage", getBestLanguage);
+implementationWrapper("MainActivity.getBestLanguage", function (lang){
+    return this.getBestLanguage("Python3");
+});
 ```
 
 

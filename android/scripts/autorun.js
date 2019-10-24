@@ -29,7 +29,7 @@ setTimeout(function (){Java.perform(function() {
 
     /*****************************Trace JNI*************************/
     [
-        '****.so',
+//        'libxxx.so',
     ].forEach(function (mName) {
         Module.enumerateExports(mName, {
             onMatch: function(e) {
