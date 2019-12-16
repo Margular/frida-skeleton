@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import time
+import threading
 
 __LOG__ = time.strftime("%Y-%m-%d %H-%M-%S.log")
 
@@ -35,19 +36,19 @@ def on_message(message, data):
     append_log(os.path.join("logs", __LOG__), text)
 
 
-def hook_apps(regexp):
+def hook_apps(device, regexp):
     # [] or None
     if not regexp:
         regexp = ['.*']
 
-    proc_names = set(_.name for _ in frida.get_usb_device().enumerate_processes())
+    proc_names = set(_.name for _ in device.enumerate_processes())
 
     print('Start hooking apps that has been started by user...\n')
     for name in proc_names:
         for _ in regexp:
             if re.search(_, name):
                 try:
-                    hook(name)
+                    hook(device, name)
                 except Exception as e:
                     print(e)
                 finally:
@@ -58,7 +59,7 @@ def hook_apps(regexp):
     # Start hooking all the following apps
     while True:
         time.sleep(1)
-        new_proc_names = set(_.name for _ in frida.get_usb_device().enumerate_processes())
+        new_proc_names = set(_.name for _ in device.enumerate_processes())
         if len(new_proc_names) == 0:
             continue
 
@@ -69,7 +70,7 @@ def hook_apps(regexp):
                     # Wait for app starting completely
                     time.sleep(1)
                     try:
-                        hook(name)
+                        hook(device, name)
                     except Exception as e:
                         print(e)
                     finally:
@@ -78,9 +79,9 @@ def hook_apps(regexp):
         proc_names = new_proc_names
 
 
-def hook(name):
+def hook(device, name):
     print('[*] Now hook app ' + name)
-    process = frida.get_usb_device().attach(name)
+    process = device.attach(name)
     js = 'Java.perform(function() {'
 
     # Load all scripts under folder 'scripts'
@@ -96,22 +97,23 @@ def hook(name):
     script.load()
 
 
-def check_frida_server():
+def check_frida_server(device):
     try:
         # Try to enumerate processes so that we can determine the state of frida server
-        frida.get_usb_device().enumerate_processes()
-    except frida.InvalidArgumentError as e:
+        device.enumerate_processes()
+    except frida.InvalidArgumentError:
         print('Please plug-in your mobile device!')
         sys.exit(-1)
-    except frida.ServerNotRunningError as e:
+    except frida.ServerNotRunningError:
         return False
 
     return True
 
 
-def run_frida_server():
+def run_frida_server(device):
     # Get filenames inside /data/local/tmp
-    output = subprocess.run('adb shell ls /data/local/tmp', stdout=subprocess.PIPE, shell=True).stdout.decode()
+    output = subprocess.run('adb -s "{}" shell ls /data/local/tmp'.format(device.id),
+                            stdout=subprocess.PIPE, shell=True).stdout.decode()
     frida_servers = []  # Store all found frida server filenames
 
     # Seek out all frida-server
@@ -126,7 +128,7 @@ def run_frida_server():
     # Only one frida server has been found
     elif len(frida_servers) == 1:
         print('Running ' + frida_servers[0])
-        subprocess.Popen('adb shell setsid ' + frida_servers[0], shell=True)
+        subprocess.Popen('adb -s "{}" shell setsid "{}"'.format(device.id, frida_servers[0]), shell=True)
     else:
         print('Select the frida server you want to run:\n')
 
@@ -142,30 +144,46 @@ def run_frida_server():
             sys.exit(-1)
 
         print('running ' + frida_servers[int(choice)])
-        subprocess.Popen('adb shell setsid ' + frida_servers[int(choice)], shell=True)
+        subprocess.Popen('adb shell -s "{}" setsid {}'.format(device.id, frida_servers[int(choice)]), shell=True)
 
     # Wait for frida server
     time.sleep(5)
     return True
 
 
-def main():
-    parser = argparse.ArgumentParser(description='A tool that hook all apps you need')
-    parser.add_argument('regexp', type=str, nargs='*',
-                        help='Regexp for the apps you want to hook such as "^com\.baidu\.", empty for hooking all apps')
-
-    args = parser.parse_args()
-
+def hook_device(device, regexp):
     # First check whether the frida server has been started
-    if not check_frida_server():
+    if not check_frida_server(device):
         print('frida server has not been started yet! now try to run frida-server from /data/local/tmp...')
         # Try to run frida server automatically inside /data/local/tmp
-        if not run_frida_server():
+        if not run_frida_server(device):
             print('failed to run frida server! you need to run it manually or put a frida-server '
                   'inside /data/local/tmp')
             sys.exit(-1)
 
-    hook_apps(args.regexp)
+    hook_apps(device, regexp)
+
+
+def main():
+    parser = argparse.ArgumentParser(description='A tool that hook all apps you need')
+    parser.add_argument('regexp', type=str, nargs='*',
+                        help=r'Regexp for the apps you want to hook such as "^com\.baidu\.", '
+                             r'empty for hooking all apps')
+
+    args = parser.parse_args()
+
+    devices = frida.enumerate_devices()
+    threads = []
+
+    for device in devices:
+        if device.type != 'usb':
+            continue
+        thread = threading.Thread(target=hook_device, args=(device, args.regexp))
+        thread.start()
+        threads.append(thread)
+
+    for thread in threads:
+        thread.join()
 
 
 if __name__ == '__main__':
