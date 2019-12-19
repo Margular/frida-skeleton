@@ -176,3 +176,6 @@ logs/
 
 .idea/
 release/
+frida-server*
+*.swp
+
