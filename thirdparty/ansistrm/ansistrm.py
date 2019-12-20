@@ -1,12 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 #
 # Copyright (C) 2010-2012 Vinay Sajip. All rights reserved. Licensed under the new BSD license.
 # (Note: 2018 modifications by @stamparm)
 #
 
 import logging
-import os
 import re
-import sys
 
 from lib.core.settings import IS_WIN
 
@@ -20,8 +21,10 @@ if IS_WIN:
     ctypes.windll.kernel32.SetConsoleTextAttribute.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.WORD]
     ctypes.windll.kernel32.SetConsoleTextAttribute.restype = ctypes.wintypes.BOOL
 
+
 def stdoutEncode(data):  # Cross-referenced function
     return data
+
 
 class ColorizingStreamHandler(logging.StreamHandler):
     # color names to indices
@@ -82,14 +85,14 @@ class ColorizingStreamHandler(logging.StreamHandler):
         ansi_esc = re.compile(r'\x1b\[((?:\d+)(?:;(?:\d+))*)m')
 
         nt_color_map = {
-            0: 0x00,    # black
-            1: 0x04,    # red
-            2: 0x02,    # green
-            3: 0x06,    # yellow
-            4: 0x01,    # blue
-            5: 0x05,    # magenta
-            6: 0x03,    # cyan
-            7: 0x07,    # white
+            0: 0x00,  # black
+            1: 0x04,  # red
+            2: 0x02,  # green
+            3: 0x06,  # yellow
+            4: 0x01,  # blue
+            5: 0x05,  # magenta
+            6: 0x03,  # cyan
+            7: 0x07,  # white
         }
 
         def output_colorized(self, message):
@@ -100,7 +103,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
             if fd is not None:
                 fd = fd()
 
-                if fd in (1, 2): # stdout or stderr
+                if fd in (1, 2):  # stdout or stderr
                     h = ctypes.windll.kernel32.GetStdHandle(-10 - fd)
 
             while parts:
@@ -123,11 +126,11 @@ class ColorizingStreamHandler(logging.StreamHandler):
                             elif 30 <= p <= 37:
                                 color |= self.nt_color_map[p - 30]
                             elif p == 1:
-                                color |= 0x08 # foreground intensity on
-                            elif p == 0: # reset to default color
+                                color |= 0x08  # foreground intensity on
+                            elif p == 0:  # reset to default color
                                 color = 0x07
                             else:
-                                pass # error condition ignored
+                                pass  # error condition ignored
 
                         ctypes.windll.kernel32.SetConsoleTextAttribute(h, color)
 
@@ -174,33 +177,41 @@ class ColorizingStreamHandler(logging.StreamHandler):
                     match = re.search(r"\A\s*\[([\d:]+)\]", message)  # time
                     if match:
                         time = match.group(1)
-                        message = message.replace(time, ''.join((self.csi, str(self.color_map["cyan"] + 30), 'm', time, self._reset(message))), 1)
+                        message = message.replace(time, ''.join(
+                            (self.csi, str(self.color_map["cyan"] + 30), 'm', time, self._reset(message))), 1)
 
                     match = re.search(r"\[(#\d+)\]", message)  # counter
                     if match:
                         counter = match.group(1)
-                        message = message.replace(counter, ''.join((self.csi, str(self.color_map["yellow"] + 30), 'm', counter, self._reset(message))), 1)
+                        message = message.replace(counter, ''.join(
+                            (self.csi, str(self.color_map["yellow"] + 30), 'm', counter, self._reset(message))), 1)
 
                     if level != "PAYLOAD":
                         if any(_ in message for _ in ("parsed DBMS error message",)):
                             match = re.search(r": '(.+)'", message)
                             if match:
                                 string = match.group(1)
-                                message = message.replace("'%s'" % string, "'%s'" % ''.join((self.csi, str(self.color_map["white"] + 30), 'm', string, self._reset(message))), 1)
+                                message = message.replace("'%s'" % string, "'%s'" % ''.join(
+                                    (self.csi, str(self.color_map["white"] + 30), 'm', string, self._reset(message))),
+                                                          1)
                         else:
                             match = re.search(r"\bresumed: '(.+\.\.\.)", message)
                             if match:
                                 string = match.group(1)
-                                message = message.replace("'%s" % string, "'%s" % ''.join((self.csi, str(self.color_map["white"] + 30), 'm', string, self._reset(message))), 1)
+                                message = message.replace("'%s" % string, "'%s" % ''.join(
+                                    (self.csi, str(self.color_map["white"] + 30), 'm', string, self._reset(message))),
+                                                          1)
                             else:
                                 match = re.search(r" \('(.+)'\)\Z", message)
                                 if match:
                                     string = match.group(1)
-                                    message = message.replace("'%s'" % string, "'%s'" % ''.join((self.csi, str(self.color_map["white"] + 30), 'm', string, self._reset(message))), 1)
+                                    message = message.replace("'%s'" % string, "'%s'" % ''.join((self.csi, str(
+                                        self.color_map["white"] + 30), 'm', string, self._reset(message))), 1)
                                 else:
                                     for match in re.finditer(r"[^\w]'([^']+)'", message):  # single-quoted
                                         string = match.group(1)
-                                        message = message.replace("'%s'" % string, "'%s'" % ''.join((self.csi, str(self.color_map["white"] + 30), 'm', string, self._reset(message))), 1)
+                                        message = message.replace("'%s'" % string, "'%s'" % ''.join((self.csi, str(
+                                            self.color_map["white"] + 30), 'm', string, self._reset(message))), 1)
                 else:
                     message = ''.join((self.csi, ';'.join(params), 'm', message, self.reset))
 

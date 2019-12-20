@@ -12,10 +12,14 @@ from lib.core.log import LOGGER
 
 class WatchThread(threading.Thread):
 
-    def run(self) -> None:
-        args = self._args[0]
+    def __init__(self, install: bool, port: int, regexps: list, daemon: bool):
+        super().__init__(daemon=daemon)
+        self.install = install
+        self.port = port
+        self.regexps = regexps
 
-        LOGGER.debug('{} start with args: {}'.format(self._name, args))
+    def run(self) -> None:
+        LOGGER.debug('{} start'.format(self.__class__.__name__))
 
         threads = []
 
@@ -29,7 +33,7 @@ class WatchThread(threading.Thread):
                 duplicated = False
 
                 for t in threads:
-                    if t._args[0].id == device.id:
+                    if t.device.id == device.id:
                         if not t.is_alive():
                             threads.remove(t)
                             break
@@ -39,10 +43,11 @@ class WatchThread(threading.Thread):
 
                 if duplicated:
                     continue
-
-                LOGGER.info("hook device: id={}, name={}, type={}".format(device.id, device.name, device.type))
-                new_thread = FridaThread(name='FridaThread', args=(device, args))
-                new_thread.start()
-                threads.append(new_thread)
+                try:
+                    new_thread = FridaThread(device, self.install, self.port, self.regexps, True)
+                    new_thread.start()
+                    threads.append(new_thread)
+                except Exception as e:
+                    LOGGER.error(e)
 
             time.sleep(1)
