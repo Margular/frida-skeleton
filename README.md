@@ -15,7 +15,15 @@ Frida
 
 The command below will hook all applications whose package name starts with `com.google` or `com.twitter`, and keep monitoring these applications, hook them immediately when they start up
 
-`Python hook.py "^com\.google\." "^com\.twitter\."`
+`python hook.py "^com\.google\." "^com\.twitter\."`
+
+
+
+more options:
+
+
+
+![](./assets/help.png)
 
 
 
@@ -64,19 +72,7 @@ implementationWrapper("MainActivity.getBestLanguage", function (lang){
 
 
 
-They have the same output:
-
-```
-Start hooking apps that has been started by user...
-
-[*] Now hook app io.github.margular
-[*] All code activated! io.github.margular
-Initial hooking finished!
-
-2019-09-15 15:23:41.654+02:00 trace classes finished!
-2019-09-15 15:23:44.827+02:00 MainActivity.getBestLanguage(Python)
-2019-09-15 15:23:44.827+02:00 MainActivity.getBestLanguage(Python) => Python3
-```
+Their outputs are the same
 
 
 
@@ -144,6 +140,18 @@ This will trace all functions of libcommon.so
 
 
 You can edit the autorun.js directly!
+
+
+
+## Multi threading
+
+Implemented multi-threading to hook multiple devices
+
+
+
+## Force traffic redirect
+
+Use iptables and adb to redirect mobile phone traffic to a transparent proxy listening port on this machine(such as burp suite), so you can easily capture mobile traffic
 
 
 
