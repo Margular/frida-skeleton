@@ -68,7 +68,8 @@ class FridaThread(threading.Thread):
         self.adb.unsafe_shell('setenforce 0', root=True)
 
         # uninstall iptables, maybe failed without this when invoking frida server
-        self.iptables.uninstall(self.port)
+        if self.port:
+            self.iptables.uninstall(self.port)
 
         if self.install:
             self.install_frida_server()
