@@ -36,7 +36,7 @@ def main():
         t = WatchThread(args.install, args.port, args.regexps, True)
         t.start()
         t.join()
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
         LOGGER.info('shutdown, thank you for using frida skeleton')
     except Exception as e:
         LOGGER.error(e)

@@ -3,26 +3,14 @@
 
 
 class Iptables:
-    _commands = [
-        ['iptables -t nat -A OUTPUT -p tcp -j REDIRECT --to-ports {}',
-         'iptables -t nat -D OUTPUT -p tcp -j REDIRECT --to-ports {}'],
-    ]
+    install_cmd = 'iptables -t nat -A OUTPUT -p tcp -o wlan0 -j DNAT --to-destination 127.0.0.1:{}'
+    uninstall_cmd = 'iptables -t nat -F'
 
     def __init__(self, adb):
         self._adb = adb
 
-    def uninstall(self, port):
-        rets = []
-
-        for install, uninstall in self._commands:
-            rets.append(self._adb.unsafe_shell(uninstall.format(port), root=True))
-
-        return rets
+    def uninstall(self):
+        return self._adb.unsafe_shell(self.uninstall_cmd, root=True)
 
     def install(self, port):
-        rets = []
-
-        for install, uninstall in self._commands:
-            rets.append(self._adb.unsafe_shell(install.format(port), root=True))
-
-        return rets
+        return self._adb.unsafe_shell(self.install_cmd.format(port), root=True)

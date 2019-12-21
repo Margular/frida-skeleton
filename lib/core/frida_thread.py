@@ -27,9 +27,6 @@ class FridaThread(threading.Thread):
         self.port = port
         self.regexps = regexps if regexps else ['.*']
 
-        # record reverse tcp port status
-        self.port_enabled = False
-
         self.adb = Adb(self.device.id)
         self.iptables = Iptables(self.adb)
 
@@ -67,9 +64,13 @@ class FridaThread(threading.Thread):
         # close selinux
         self.adb.unsafe_shell('setenforce 0', root=True)
 
-        # uninstall iptables, maybe failed without this when invoking frida server
+        self.iptables.uninstall()
+
+        # install iptables and reverse tcp port
         if self.port:
-            self.iptables.uninstall(self.port)
+            # enable tcp connections between frida server and binding
+            self.iptables.install(self.port)
+            self.adb.reverse(self.port)
 
         if self.install:
             self.install_frida_server()
@@ -181,13 +182,6 @@ class FridaThread(threading.Thread):
         script = process.create_script(js)
         script.on('message', self.on_message)
         script.load()
-
-        # install iptables and reverse tcp port
-        if self.port and not self.port_enabled:
-            # enable tcp connections between frida server and binding
-            self.iptables.install(self.port)
-            self.adb.reverse(self.port)
-            self.port_enabled = True
 
     def on_message(self, message, data):
         LOGGER.debug('on_message message: {} data: {}'.format(message, data))
