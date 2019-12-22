@@ -9,8 +9,9 @@ import time
 
 import frida
 
-from lib.core.common import download, append_log
+from lib.core.common import download
 from lib.core.log import LOGGER
+from lib.core.settings import ROOT_DIR
 from lib.utils.adb import Adb
 from lib.utils.iptables import Iptables
 
@@ -44,7 +45,6 @@ class FridaThread(threading.Thread):
             raise RuntimeError('unknown arch: ' + self.arch)
 
         self.server_name = 'frida-server-{}-android-{}'.format(frida.__version__, self.arch)
-        self.log_filename = time.strftime('%Y-%m-%d_%H-%M-%S_') + self.device.id + '.log'
 
     def run(self) -> None:
         LOGGER.info("{} start with hook device: id={}, name={}, type={}".format(
@@ -79,7 +79,7 @@ class FridaThread(threading.Thread):
         self.run_frida_server()
 
     def install_frida_server(self):
-        server_path = os.path.join('assets', self.server_name)
+        server_path = os.path.join(ROOT_DIR, 'assets', self.server_name)
         server_path_xz = server_path + '.xz'
 
         # if not exist frida server then install it
@@ -116,40 +116,27 @@ class FridaThread(threading.Thread):
         ).start()
 
         # waiting for frida server
-        time.sleep(1)
+        time.sleep(0.5)
 
     def hook_apps(self):
-        # first hook started apps
-        apps = set(p.name for p in self.device.enumerate_processes())
-
-        LOGGER.info('hook apps that has been started by user')
-
-        for app in apps:
-            for regexp in self.regexps:
-                if re.search(regexp, app):
-                    try:
-                        self.hook(app)
-                    except Exception as e:
-                        LOGGER.error(e)
-                    finally:
-                        break
-
-        LOGGER.info('first hooking finished, now start to monitor apps')
+        apps = set()
 
         # monitor apps
         while True:
-            time.sleep(1)
+            time.sleep(0.1)
 
             new_apps = set(p.name for p in self.device.enumerate_processes())
             if not new_apps:
                 continue
 
             incremental_apps = new_apps - apps
+            decremental_apps = apps - new_apps
+
             for incremental_app in incremental_apps:
                 for regexp in self.regexps:
                     if re.search(regexp, incremental_app):
                         # waiting for app startup completely
-                        time.sleep(1)
+                        time.sleep(0.1)
 
                         try:
                             self.hook(incremental_app)
@@ -157,6 +144,12 @@ class FridaThread(threading.Thread):
                             LOGGER.error(e)
                         finally:
                             break
+
+            for decremental_app in decremental_apps:
+                for regexp in self.regexps:
+                    if re.search(regexp, decremental_app):
+                        LOGGER.info('app {} has died'.format(decremental_app))
+                        break
 
             apps = new_apps
 
@@ -170,7 +163,7 @@ class FridaThread(threading.Thread):
         js = 'Java.perform(function() {'
 
         # load all scripts under folder 'scripts'
-        for (dirpath, dirnames, filenames) in os.walk('scripts'):
+        for (dirpath, dirnames, filenames) in os.walk(os.path.join(ROOT_DIR, 'scripts')):
             for filename in filenames:
                 _ = open(os.path.join(dirpath, filename), encoding="utf-8").read()
                 if _.startswith(r'''/*Deprecated*/'''):
@@ -184,20 +177,20 @@ class FridaThread(threading.Thread):
         script.load()
 
     def on_message(self, message, data):
-        LOGGER.debug('on_message message: {} data: {}'.format(message, data))
-        if message['type'] == 'error':
-            text = message['description'].strip()
+        try:
+            if message['type'] == 'error':
+                text = message['description'].strip()
 
-            if not text:
-                return
+                if not text:
+                    return
 
-            LOGGER.error(text)
-        else:
-            text = message['payload'].strip() if message['type'] == 'send' else message.strip()
+                LOGGER.error(text)
+            else:
+                text = message['payload'].strip() if message['type'] == 'send' else message.strip()
 
-            if not text:
-                return
+                if not text:
+                    return
 
-            LOGGER.info(text)
-
-        append_log(os.path.join("logs", self.log_filename), text)
+                LOGGER.info(text)
+        except Exception as e:
+            LOGGER.error(e)

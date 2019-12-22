@@ -9,16 +9,19 @@ class Adb(Shell):
         self.serial = serial
         # if we are root shell
         self.is_root = False
+        self.check_root()
 
     @classmethod
     def start_server(cls):
         return cls.cmd_and_debug('adb start-server')
 
-    def root(self):
-        ret = self.cmd_and_debug('adb -s "{}" root'.format(self.serial))
-        if not 'cannot run as root' in ret['out']:
+    def check_root(self):
+        if self.unsafe_shell('whoami')['out'] == 'root':
             self.is_root = True
-        return ret
+
+    def root(self):
+        self.cmd_and_debug('adb -s "{}" root'.format(self.serial))
+        self.check_root()
 
     def unsafe_shell(self, command, root=False):
         return self.cmd_and_debug(r'''adb -s "{}" shell "{}{}"'''.format(

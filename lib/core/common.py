@@ -49,11 +49,3 @@ def download(url, file_path):
                 sys.stdout.flush()
 
     sys.stdout.write(os.linesep)
-
-
-def append_log(log_path, text):
-    log_dir = os.path.split(log_path)[0]
-    os.makedirs(log_dir, mode=0o700, exist_ok=True)
-    with open(log_path, 'a', encoding='utf-8') as f:
-        f.write(text)
-        f.write("\n")

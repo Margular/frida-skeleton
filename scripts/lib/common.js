@@ -1,8 +1,8 @@
 /*
  * Description: Common functions for common usage.
  * Author: Margular
- * Date: 2019-08-21
- * Version: 1.0
+ * Date: 2019-12-22
+ * Version: 1.1
  */
 
 var Class = Java.use("java.lang.Class");
@@ -18,7 +18,7 @@ function extractDeclaredFields(o) {
 
     while (currentClass.__proto__.hasOwnProperty('getName')) {
         sb.append(currentClass.getName()).append("=====");
-        currentClass.getDeclaredFields().forEach(function(field) {
+        currentClass.getDeclaredFields().forEach(function (field) {
             field.setAccessible(true);
             sb.append(field.getName()).append(": ").append(field.get(o)).append('---');
         });
@@ -26,10 +26,6 @@ function extractDeclaredFields(o) {
     }
 
     return sb.toString();
-}
-
-function sendWithDate(data) {
-    send(Date() + " " + data);
 }
 
 function implementationWrapper(method, func) {
@@ -52,7 +48,7 @@ function implementationWrapper(method, func) {
     }
 
     var impl = method + ".implementation = function (" + params.join() + ") {\n";
-    impl += "sendWithDate(\"";
+    impl += "send(\"";
 
     // funcDetail for log function name and parameters
     var funcDetail = method + "(\" + ";
@@ -60,8 +56,8 @@ function implementationWrapper(method, func) {
     if (params.length > 0) {
         funcDetail += params[0];
 
-        for (var i = 1; i < func.length; i++) {
-            funcDetail += " + \", \" + " + params[i];
+        for (var j = 1; j < func.length; j++) {
+            funcDetail += " + \", \" + " + params[j];
         }
     } else
         funcDetail += "\"\"";
@@ -77,7 +73,7 @@ function implementationWrapper(method, func) {
     else
         impl += ");\n";
 
-    impl += "sendWithDate(\"" + funcDetail + " => \" + ret);\n";
+    impl += "send(\"" + funcDetail + " => \" + ret);\n";
     impl += "return ret;\n";
     impl += "};\n";
 

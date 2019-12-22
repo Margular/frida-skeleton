@@ -50,4 +50,4 @@ class WatchThread(threading.Thread):
                 except Exception as e:
                     LOGGER.error(e)
 
-            time.sleep(1)
+            time.sleep(0.1)

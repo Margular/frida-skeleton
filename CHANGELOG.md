@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2019-12-22
+
+### Changed
+
+- log format optimization
+- code optimization
+
+
+
 ## [2.1.1] - 2019-12-21
 
 ### Changed
@@ -52,7 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Trace jni functions
 - Good extensibility
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/Margular/frida-skeleton/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/Margular/frida-skeleton/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Margular/frida-skeleton/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/Margular/frida-skeleton/compare/v1.1.0...v2.0.0

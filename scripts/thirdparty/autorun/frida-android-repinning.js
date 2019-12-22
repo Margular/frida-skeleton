@@ -53,12 +53,14 @@ setTimeout(function(){
 	    tmf.init(keyStore);
 	    console.log("[+] Our TrustManager is ready...");
 
-	    console.log("[+] Hijacking SSLContext methods now...")
-	    console.log("[-] Waiting for the app to invoke SSLContext.init()...")
+	    console.log("[+] Hijacking SSLContext methods now...");
+	    console.log("[-] Waiting for the app to invoke SSLContext.init()...");
 
-	   	SSLContext.init.overload("[Ljavax.net.ssl.KeyManager;", "[Ljavax.net.ssl.TrustManager;", "java.security.SecureRandom").implementation = function(a,b,c) {
+	   	SSLContext.init.overload("[Ljavax.net.ssl.KeyManager;", "[Ljavax.net.ssl.TrustManager;",
+			"java.security.SecureRandom").implementation = function(a,b,c) {
 	   		console.log("[o] App invoked javax.net.ssl.SSLContext.init...");
-	   		SSLContext.init.overload("[Ljavax.net.ssl.KeyManager;", "[Ljavax.net.ssl.TrustManager;", "java.security.SecureRandom").call(this, a, tmf.getTrustManagers(), c);
+	   		SSLContext.init.overload("[Ljavax.net.ssl.KeyManager;", "[Ljavax.net.ssl.TrustManager;",
+				"java.security.SecureRandom").call(this, a, tmf.getTrustManagers(), c);
 	   		console.log("[+] SSLContext initialized with our custom TrustManager!");
 	   	}
     });

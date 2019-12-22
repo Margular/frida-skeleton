@@ -6,7 +6,7 @@
 var LOG = function (input) {
     if (typeof input === 'object')
         input = JSON.stringify(input);
-    send(Date() + " " + input);
+    send(input);
 };
 
 var printBacktrace = function () {
@@ -32,7 +32,8 @@ function traceClass(targetClass) {
     var parsedMethods = [];
     methods.forEach(function (method) {
         var methodStr = method.toString();
-        var methodReplace = methodStr.replace(targetClass + ".", "TOKEN").match(/\sTOKEN(.*)\(/)[1];
+        var methodReplace = methodStr.replace(targetClass + ".", "TOKEN")
+            .match(/\sTOKEN(.*)\(/)[1];
          parsedMethods.push(methodReplace);
     });
 

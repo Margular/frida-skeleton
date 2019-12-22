@@ -1,8 +1,8 @@
 /*
  * Description: A js file that defined many useful auto run javascript snippets
  * Author: Margular
- * Date: 2019-08-21
- * Version: 1.0
+ * Date: 2019-12-22
+ * Version: 1.1
  */
 
 
@@ -10,8 +10,8 @@ setTimeout(function (){Java.perform(function() {
     /*****************************Trace Java Classes****************************/
     /* METHOD 1: specify several classes to trace */
     [
-//        'java.io.File',
-//        'java.net.Socket'
+       // 'java.io.File',
+       // 'java.net.Socket'
     ].forEach(traceClass);
 
     /* METHOD 2: trace using regular expression */
@@ -22,31 +22,30 @@ setTimeout(function (){Java.perform(function() {
             }
         },
         "onComplete": function() {
-            send(Date() + " trace classes finished!");
         }
     });
     /*****************************Trace Java Classes End*************************/
 
     /*****************************Trace JNI*************************/
     [
-//        'libxxx.so',
+        // 'libxxx.so'
     ].forEach(function (mName) {
         Module.enumerateExports(mName, {
             onMatch: function(e) {
-                if(e.type == 'function') {
-                    send(Date() + " Intercepting jni function: " + e.name + "(" + e.address + "|" +
+                if (e.type === 'function') {
+                    send("Intercepting jni function: " + e.name + "(" + e.address + "|" +
                         e.address.sub(Module.findBaseAddress(mName)) + ")");
                     try {
                         Interceptor.attach(e.address, {
-                            onEnter: function(args) {
-                                this.sendString = Date() + " " + e.name + "(addr: " + e.address + "|" +
+                            onEnter: function (args) {
+                                this.sendString = e.name + "(addr: " + e.address + "|" +
                                     e.address.sub(Module.findBaseAddress(mName)) + ", args: {";
 
                                 var i = 0;
                                 while (1) {
                                     try {
                                         this.sendString += args[i].readUtf8String();
-                                    } catch(error) {
+                                    } catch (error) {
                                         // can not convert to string
                                         this.sendString += " ";
                                     } finally {
@@ -60,7 +59,8 @@ setTimeout(function (){Java.perform(function() {
                                 }
 
                                 this.sendString += "}) called from: { " +
-                                    Thread.backtrace(this.context, Backtracer.ACCURATE).map(DebugSymbol.fromAddress).join(', ');
+                                    Thread.backtrace(this.context, Backtracer.ACCURATE).map(DebugSymbol.fromAddress)
+                                        .join(', ');
                             },
                             onLeave: function(retVal){
                                 this.sendString += " } -> " + retVal;
@@ -68,7 +68,7 @@ setTimeout(function (){Java.perform(function() {
                             }
                         });
                     } catch (error) {
-                        send(Date() + " " + error);
+                        send(error);
                     }
                 }
             },
