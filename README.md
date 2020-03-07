@@ -1,45 +1,60 @@
-# frida-skeleton
-This repository is supposed to define infrastructure of frida on hook android including some useful functions
+## 前提条件
+
+python3
+
+frida
 
 
 
-## Requirements
+使用前请检查是否已安装frida，通过pip安装frida、frida-tools(控制台工具)： 
 
-Python3
-
-Frida
+`pip install frida frida-tools`
 
 
 
-## Usage
+## 一句话简介
 
-The command below will hook all applications whose package name starts with `com.google` or `com.twitter`, and keep monitoring these applications, hook them immediately when they start up
-
-`python hook.py "^com\.google\." "^com\.twitter\."`
+frida-skeleton会根据指定的正则表达式持续监听并hook对应的程序，遍历scripts目录下的所有js文件并将它们全部加载用以hook这些程序
 
 
 
-more options:
-
-
+## 用法
 
 ![](./assets/help.png)
 
 
 
-Output:
+* -i: 自动从github安装对应版本和架构的frida-server，安装是在插入USB后进行的，不会提前安装，frida-server会下载到assets目录下，支持断点续传，并且不会重复下载；下载完之后会自动通过adb push到/data/local/tmp目录下并自动添加执行权限以及在后台运行
+* -p PORT: 如-p 8080，会自动利用iptables将所有的TCP流量重定向到安卓的8080端口，并且还会通过adb reverse将安卓上的8080映射到本机的8080，这样就可以在本机用Burp Suite监听8080端口来抓包了（是不是很方便呢）
+* -v: debug模式，会输出更多的信息
+* regexps: 支持多个正则表达式，frida-skeleton会根据你指定的正则表达式去匹配包名hook对应的程序
 
-![](./assets/output.png)
+
+
+## 输出示例
+
+你可以在这里获取示例中的apk：[示例APK](https://github.com/Margular/frida-skeleton/releases)
+
+![](./assets/sample.png)
 
 
 
-## Features
+## 目录结构
 
-You can get the [example apk](https://github.com/Margular/frida-skeleton/releases)
+* assets: 资源文件，存放图片、frida-server
+* lib: python库文件
+* logs: 日志文件
+* scripts: 这个目录下面的所有js文件都会被加载用来hook对应的程序
+* tests: 示例代码，目前只有一个安卓程序
+* thirdparty: 第三方python库
 
-### Easy to write code
 
-Old style of hooking like below:
+
+## 特性
+
+### 更简洁的hook代码
+
+原生frida的hook代码：
 
 ```javascript
 var MainActivity = Java.use("io.github.margular.MainActivity");
@@ -60,7 +75,7 @@ MainActivity.getBestLanguage.implementation = function (lang) {
 
 
 
-New style of Frida-skeleton:
+frida-skeleton的hook代码(路径为`scripts/main.js`)：
 
 ```javascript
 var MainActivity = Java.use("io.github.margular.MainActivity");
@@ -72,24 +87,27 @@ implementationWrapper("MainActivity.getBestLanguage", function (lang){
 
 
 
-Their outputs are the same
+它们的输出相同，frida-skeleton通过实现一个implementationWrapper使得它会在hook函数的之前、之后都自动地打印日志信息，如下图所示：
+
+![](./assets/frida-skeleton-style-of-hook.png)
 
 
 
-## Bypass SSL problem automatically
+## 自动绕过证书绑定
 
-Now support:
-
-* universal android ssl pinning bypass
-* webview bypass
+实现证书绕过功能的js文件摘抄自互联网，路径为：`scripts/thirdparty/autorun/universal-android-ssl-pinning-bypass-2.js`，相同路径下还有bypass webview的js文件，以及老的证书绑定绕过代码(老版本的安卓手机可能会用得到，将头部的Deprecated注释去掉就能使其生效)
 
 
 
-## Trace Java classes
+## 内置Java类所有函数的hook
 
-There are two ways to trace java classes:
+这部分代码摘抄自互联网，实现代码在：`scripts/autorun.js`，通过修改其代码实现你想要的功能
 
-1. specify several classes to trace:
+
+
+有两种方式hook java类
+
+1. 指定需要hook的类全限定名:
 
 ```javascript
 [
@@ -98,11 +116,11 @@ There are two ways to trace java classes:
 ].forEach(traceClass);
 ```
 
-This will trace all methods of java.io.File and java.net.Socket
+这会hook File和Socket类的所有方法
 
 
 
-2. trace using regular expression
+2. 通过正则表达式hook:
 
 ```javascript
 Java.enumerateLoadedClasses({
@@ -117,15 +135,15 @@ Java.enumerateLoadedClasses({
 });
 ```
 
-This will trace all methods of all classes that the class name starts with com.google
+这会 hook所有以com.google开头的类
 
 
 
-You can edit the autorun.js directly!
+## 内置so文件的函数的hook
+
+同样通过修改`scripts/autorun.js`实现你想要的功能
 
 
-
-## Trace JNI functions
 
 ```
 [
@@ -133,29 +151,23 @@ You can edit the autorun.js directly!
 ].forEach(function (mName) {
 ```
 
-
-
-This will trace all functions of libcommon.so
-
-
-
-You can edit the autorun.js directly!
+上面的代码会hook所有libcommon.so里的函数
 
 
 
-## Multi threading
+## 多线程
 
-Implemented multi-threading to hook multiple devices
-
-
-
-## Force traffic redirect
-
-Use iptables and adb to redirect mobile phone traffic to a transparent proxy listening port on this machine(such as burp suite), so you can easily capture mobile traffic
+实现了多线程，因此可以互不影响地同时hook多个设备
 
 
 
-## Good Extensibility
+## 重定向流量
 
-You can copy your third party js file to `scripts/thirdparty` directly. In fact, the bypass features just copy the open source code to the directory.
+利用iptables和adb的配合使得Burp Suite能够抓到所有的tcp流量，配合自动证书绑定绕过相当地方便
+
+
+
+## 良好的可扩展性
+
+你可以将你的任何hook代码放到scripts目录下就能生效，并且能同时享受到之前提到的功能而不需要另起一个js文件，默认情况下通过修改main.js就好了
 
