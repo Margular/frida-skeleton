@@ -17,8 +17,9 @@ class Shell:
 
         err = p.stderr.read().decode().strip()
         if err:
-            LOGGER.error('shell error: ' + err)
-            ret['err'] = err
+            if err != 'Unable to start: Error binding to address: Address already in use':
+                LOGGER.error('shell error: ' + err)
+                ret['err'] = err
 
         out = p.stdout.read().decode().strip()
         if out:

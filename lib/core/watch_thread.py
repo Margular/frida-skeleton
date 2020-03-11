@@ -12,18 +12,21 @@ from lib.core.log import LOGGER
 
 class WatchThread(threading.Thread):
 
-    def __init__(self, install: bool, port: int, regexps: list, daemon: bool):
-        super().__init__(daemon=daemon)
+    def __init__(self, install: bool, port: int, regexps: list):
+        super().__init__()
         self.install = install
         self.port = port
         self.regexps = regexps
+        self.frida_threads = []
+        self.stop_flag = False
 
     def run(self) -> None:
         LOGGER.debug('{} start'.format(self.__class__.__name__))
 
-        threads = []
-
         while True:
+            if self.stop_flag:
+                break
+
             devices = frida.enumerate_devices()
 
             for device in devices:
@@ -32,10 +35,10 @@ class WatchThread(threading.Thread):
 
                 duplicated = False
 
-                for t in threads:
+                for t in self.frida_threads:
                     if t.device.id == device.id:
                         if not t.is_alive():
-                            threads.remove(t)
+                            self.frida_threads.remove(t)
                             break
 
                         duplicated = True
@@ -43,11 +46,15 @@ class WatchThread(threading.Thread):
 
                 if duplicated:
                     continue
-                try:
-                    new_thread = FridaThread(device, self.install, self.port, self.regexps, True)
-                    new_thread.start()
-                    threads.append(new_thread)
-                except Exception as e:
-                    LOGGER.error(e)
+
+                frida_thread = FridaThread(device, self.install, self.port, self.regexps)
+                frida_thread.start()
+                self.frida_threads.append(frida_thread)
 
             time.sleep(0.1)
+
+    def cancel(self):
+        for frida_thread in self.frida_threads:
+            frida_thread.cancel()
+
+        self.stop_flag = True

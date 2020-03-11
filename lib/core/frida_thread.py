@@ -20,8 +20,8 @@ __lock__ = threading.Lock()
 
 class FridaThread(threading.Thread):
 
-    def __init__(self, device, install: bool, port: int, regexps: list, daemon: bool):
-        super().__init__(daemon=daemon)
+    def __init__(self, device, install: bool, port: int, regexps: list):
+        super().__init__()
 
         self.device = device
         self.install = install
@@ -46,6 +46,8 @@ class FridaThread(threading.Thread):
 
         self.server_name = 'frida-server-{}-android-{}'.format(frida.__version__, self.arch)
 
+        self.stop_flag = False
+
     def run(self) -> None:
         LOGGER.info("{} start with hook device: id={}, name={}, type={}".format(
             self.__class__.__name__, self.device.id, self.device.name, self.device.type))
@@ -55,6 +57,8 @@ class FridaThread(threading.Thread):
             self.hook_apps()
         except Exception as e:
             LOGGER.error(e)
+
+        self.shutdown()
 
     # prepare for starting hook
     def prepare(self):
@@ -123,6 +127,9 @@ class FridaThread(threading.Thread):
 
         # monitor apps
         while True:
+            if self.stop_flag:
+                break
+
             time.sleep(0.1)
 
             new_apps = set(p.name for p in self.device.enumerate_processes())
@@ -194,3 +201,10 @@ class FridaThread(threading.Thread):
                 LOGGER.info(text)
         except Exception as e:
             LOGGER.error(e)
+
+    def cancel(self):
+        self.stop_flag = True
+
+    def shutdown(self):
+        self.iptables.uninstall()
+        self.kill_frida_servers()

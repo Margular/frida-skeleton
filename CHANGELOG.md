@@ -6,12 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2020-03-11
+
+### Add
+
+- 优雅地关闭frida-skeleton使其能够在退出的同时自动清除iptables并关闭frida-server以求对设备影响最小
+- 解决windows不能通过CTRL+C关闭frida-skeleton的bug
+
+
+
 ## [2.2.0] - 2019-12-22
 
 ### Changed
 
-- log format optimization
-- code optimization
+- 优化日志格式
+- 代码架构调整 
 
 
 
@@ -19,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- enable mobile data traffic to be captured
+- 使得手机流量能够被捕获
 
 
 
@@ -27,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- more useful iptables
+- 更通用的iptables设置用以重定向TCP流量
 
 
 
@@ -35,11 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- colorful logs
-- redirect tcp traffic using iptables and adb
-- OPP change to OOP
-- catch exceptions
-- download and install frida server automatically
+- 多彩日志
+- 利用iptables和adb实现TCP流量重定向
+- 面向对象化
+- 捕获异常
+- 自动下载/安装/运行frida-server一条龙服务
 
 
 
@@ -47,21 +56,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Hook multi usb devices at once
+- 一次性hook多个usb设备
 
 
 
 ## [1.0.0] - 2019-09-15
 ### Added
-- Hook by regexp
-- Logging automatically
-- New style of hooking using ImplementationWrapper
-- Bypass ssl problem automatically
-- Trace java classes
-- Trace jni functions
-- Good extensibility
+- 通过正则表达式匹配包名
+- 自动打印日志
+- Frida-Skeleton独有的implementationWrapper更方便地写hook代码
+- 自动绕过证书绑定校验
+- 内置Java类hook方法
+- 内置jni函数hook方法
+- 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/Margular/frida-skeleton/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Margular/frida-skeleton/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/Margular/frida-skeleton/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Margular/frida-skeleton/compare/v2.0.0...v2.1.0
