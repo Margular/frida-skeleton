@@ -4,14 +4,18 @@
 import lzma
 import os
 import re
+import sys
 import threading
 import time
 
 import frida
+import requests
 
-from lib.core.common import download
 from lib.core.log import LOGGER
-from lib.core.settings import ROOT_DIR
+from lib.core.port_manager import port_manager
+from lib.core.settings import ROOT_DIR, FRIDA_SERVER_DEFAULT_PORT
+from lib.core.thread_manager import thread_manager
+from lib.core.types import FakeDevice
 from lib.utils.adb import Adb
 from lib.utils.iptables import Iptables
 
@@ -23,13 +27,26 @@ class FridaThread(threading.Thread):
     def __init__(self, device, install: bool, port: int, regexps: list):
         super().__init__()
 
-        self.device = device
+        if device.type == FakeDevice.type:
+            # init remote device
+            LOGGER.debug('device {} does not support get_usb_device, changing to get_remote_device'.format(device.id))
+            self.forward_port = port_manager.acquire_port()
+            self.device = frida.get_device_manager().add_remote_device('127.0.0.1:{}'.format(self.forward_port))
+            self.device.id = device.id
+        else:
+            self.device = device
+
         self.install = install
         self.port = port
         self.regexps = regexps if regexps else ['.*']
 
         self.adb = Adb(self.device.id)
-        self.iptables = Iptables(self.adb)
+
+        if device.type == FakeDevice.type:
+            self.adb.forward(self.forward_port, FRIDA_SERVER_DEFAULT_PORT)
+
+        if self.port:
+            self.iptables = Iptables(self.adb, self.port)
 
         self.arch = self.adb.unsafe_shell("getprop ro.product.cpu.abi")['out']
         # maybe get 'arm64-v8a', 'arm-v7a' ...
@@ -48,6 +65,8 @@ class FridaThread(threading.Thread):
 
         self.stop_flag = False
 
+        thread_manager.add_thread(self)
+
     def run(self) -> None:
         LOGGER.info("{} start with hook device: id={}, name={}, type={}".format(
             self.__class__.__name__, self.device.id, self.device.name, self.device.type))
@@ -56,9 +75,15 @@ class FridaThread(threading.Thread):
             self.prepare()
             self.hook_apps()
         except Exception as e:
-            LOGGER.error(e)
+            LOGGER.error('device {}: {}'.format(self.device.id, e))
 
-        self.shutdown()
+        try:
+            self.shutdown()
+        except Exception as e:
+            LOGGER.error('unexpected error occurred when shutdown device {}: {}'.format(self.device.id, e))
+
+        LOGGER.debug('device {} exit'.format(self.device.id))
+        thread_manager.del_thread(self)
 
     # prepare for starting hook
     def prepare(self):
@@ -73,7 +98,7 @@ class FridaThread(threading.Thread):
         # install iptables and reverse tcp port
         if self.port:
             # enable tcp connections between frida server and binding
-            self.iptables.install(self.port)
+            self.iptables.install()
             self.adb.reverse(self.port)
 
         if self.install:
@@ -81,6 +106,50 @@ class FridaThread(threading.Thread):
 
         self.kill_frida_servers()
         self.run_frida_server()
+
+    def download(self, url, file_path):
+        # get total size of file
+        r1 = requests.get(url, stream=True, verify=False)
+        total_size = int(r1.headers['Content-Length'])
+
+        # check downloaded size
+        if os.path.exists(file_path):
+            temp_size = os.path.getsize(file_path)
+        else:
+            temp_size = 0
+
+        if temp_size == total_size:
+            LOGGER.info('{} has downloaded completely'.format(file_path))
+            return
+
+        if temp_size > total_size:
+            LOGGER.error('{} has corrupted, download it again'.format(file_path))
+            os.remove(file_path)
+            return self.download(url, file_path)
+
+        LOGGER.debug('{} of {} needs to be download'.format(total_size - temp_size, total_size))
+
+        # download from temp size to end
+        headers = {'Range': 'bytes={}-'.format(temp_size)}
+
+        r = requests.get(url, stream=True, verify=False, headers=headers)
+
+        with open(file_path, "ab") as f:
+            for chunk in r.iter_content(chunk_size=1024):
+                if self.stop_flag:
+                    break
+
+                if chunk:
+                    temp_size += len(chunk)
+                    f.write(chunk)
+                    f.flush()
+
+                    # download progress
+                    done = int(50 * temp_size / total_size)
+                    sys.stdout.write("\r[{}{}] {}%".format('█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
+                    sys.stdout.flush()
+
+        sys.stdout.write(os.linesep)
 
     def install_frida_server(self):
         server_path = os.path.join(ROOT_DIR, 'assets', self.server_name)
@@ -90,8 +159,8 @@ class FridaThread(threading.Thread):
         if not self.adb.unsafe_shell("ls /data/local/tmp/" + self.server_name)['out']:
             LOGGER.info('download {} from github ...'.format(self.server_name))
             with __lock__:
-                download('https://github.com/frida/frida/releases/download/{}/{}.xz'
-                         .format(frida.__version__, self.server_name), server_path_xz)
+                self.download('https://github.com/frida/frida/releases/download/{}/{}.xz'
+                              .format(frida.__version__, self.server_name), server_path_xz)
 
             # extract frida server
             with open(server_path, 'wb') as f:
@@ -104,7 +173,7 @@ class FridaThread(threading.Thread):
     def kill_frida_servers(self):
         try:
             apps = self.device.enumerate_processes()
-        except frida.ServerNotRunningError:
+        except (frida.ServerNotRunningError, frida.TransportError, frida.InvalidOperationError):
             # frida server has not been started, no need to start
             return
 
@@ -120,7 +189,7 @@ class FridaThread(threading.Thread):
         ).start()
 
         # waiting for frida server
-        time.sleep(0.5)
+        time.sleep(1)
 
     def hook_apps(self):
         apps = set()
@@ -140,6 +209,9 @@ class FridaThread(threading.Thread):
             decremental_apps = apps - new_apps
 
             for incremental_app in incremental_apps:
+                if self.stop_flag:
+                    break
+
                 for regexp in self.regexps:
                     if re.search(regexp, incremental_app):
                         # waiting for app startup completely
@@ -153,6 +225,9 @@ class FridaThread(threading.Thread):
                             break
 
             for decremental_app in decremental_apps:
+                if self.stop_flag:
+                    break
+
                 for regexp in self.regexps:
                     if re.search(regexp, decremental_app):
                         LOGGER.info('app {} has died'.format(decremental_app))
@@ -183,7 +258,8 @@ class FridaThread(threading.Thread):
         script.on('message', self.on_message)
         script.load()
 
-    def on_message(self, message, data):
+    @staticmethod
+    def on_message(message, data):
         try:
             if message['type'] == 'error':
                 text = message['description'].strip()
@@ -206,5 +282,14 @@ class FridaThread(threading.Thread):
         self.stop_flag = True
 
     def shutdown(self):
+        LOGGER.debug('shutdown device ' + self.device.id)
+
         self.iptables.uninstall()
         self.kill_frida_servers()
+
+        if self.device.type == 'remote':
+            port_manager.release_port(self.forward_port)
+            self.adb.clear_forward(self.forward_port)
+
+        if self.port:
+            self.adb.clear_reverse(self.port)

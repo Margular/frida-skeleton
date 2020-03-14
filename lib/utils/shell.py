@@ -9,10 +9,12 @@ from lib.core.log import LOGGER
 class Shell:
 
     @classmethod
-    def cmd_and_debug(cls, cmd) -> map:
+    def cmd_and_debug(cls, cmd: str, debug=True) -> map:
         ret = {'out': '', 'err': ''}
 
-        LOGGER.debug(cmd)
+        if debug:
+            LOGGER.debug(cmd)
+
         p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, close_fds=True)
 
         err = p.stderr.read().decode().strip()
@@ -23,7 +25,8 @@ class Shell:
 
         out = p.stdout.read().decode().strip()
         if out:
-            LOGGER.debug('shell output: ' + out)
+            if debug:
+                LOGGER.debug('shell output: ' + out)
             ret['out'] = out
 
         return ret

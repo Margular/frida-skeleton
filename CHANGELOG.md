@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2020-03-14
+
+### Add
+
+- 解决有的设备通过frida.enumerate_devices()无法列出usb设备，改用frida.get_device_manager().add_remote_device()的方式
+
+
+
+### Changed
+
+- 添加线程管理器使得子线程能够正常全部退出后再退出主线程
+
+
+
 ## [2.3.0] - 2020-03-11
 
 ### Add
@@ -70,7 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 内置jni函数hook方法
 - 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/Margular/frida-skeleton/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Margular/frida-skeleton/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Margular/frida-skeleton/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/Margular/frida-skeleton/compare/v2.1.0...v2.1.1
