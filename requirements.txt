@@ -1,0 +1,4 @@
+frida
+requests
+urllib3
+

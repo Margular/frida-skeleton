@@ -6,9 +6,9 @@ frida
 
 
 
-使用前请检查是否已安装frida，通过pip安装frida、frida-tools(控制台工具)： 
+使用前请先安装依赖：
 
-`pip install frida frida-tools`
+pip install -r requirements.txt
 
 
 
