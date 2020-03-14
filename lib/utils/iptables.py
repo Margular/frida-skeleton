@@ -13,17 +13,8 @@ class Iptables:
         self.uninstall_cmd2 = 'iptables -t nat -D OUTPUT -p tcp -j DNAT --to-destination 127.0.0.1:{}'.format(port)
 
     def uninstall(self):
-        rules = self.adb.unsafe_shell('iptables -t nat -S', root=True, debug=False)['out']
-
-        for rule in rules:
-            if 'iptables -t nat {}'.format(rule) == self.install_cmd:
-                self.adb.unsafe_shell(self.uninstall_cmd)
-                break
-
-        for rule in rules:
-            if 'iptables -t nat {}'.format(rule) == self.install_cmd2:
-                self.adb.unsafe_shell(self.uninstall_cmd2)
-                break
+        self.adb.unsafe_shell(self.uninstall_cmd, root=True)
+        self.adb.unsafe_shell(self.uninstall_cmd2, root=True)
 
     def install(self):
         self.adb.unsafe_shell(self.install_cmd, root=True)

@@ -95,7 +95,6 @@ class FridaThread(threading.Thread):
 
         # install iptables and reverse tcp port
         if self.port:
-            self.iptables.uninstall()
             # enable tcp connections between frida server and binding
             self.iptables.install()
             self.adb.reverse(self.port)
