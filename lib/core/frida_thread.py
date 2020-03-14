@@ -93,10 +93,9 @@ class FridaThread(threading.Thread):
         # close selinux
         self.adb.unsafe_shell('setenforce 0', root=True)
 
-        self.iptables.uninstall()
-
         # install iptables and reverse tcp port
         if self.port:
+            self.iptables.uninstall()
             # enable tcp connections between frida server and binding
             self.iptables.install()
             self.adb.reverse(self.port)
@@ -284,7 +283,6 @@ class FridaThread(threading.Thread):
     def shutdown(self):
         LOGGER.debug('shutdown device ' + self.device.id)
 
-        self.iptables.uninstall()
         self.kill_frida_servers()
 
         if self.device.type == 'remote':
@@ -292,4 +290,5 @@ class FridaThread(threading.Thread):
             self.adb.clear_forward(self.forward_port)
 
         if self.port:
+            self.iptables.uninstall()
             self.adb.clear_reverse(self.port)
