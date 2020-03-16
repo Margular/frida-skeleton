@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.1] - 2020-03-16
+
+### Changed
+
+- 修复没有-p参数时的找不到iptables的bug
+- 取消初始化的时候删除iptables，而在退出时再保证清除
+- 修复有的手机调用self.device.kill会报错的问题
+
+
+
 ## [2.4.0] - 2020-03-14
 
 ### Add
@@ -84,7 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 内置jni函数hook方法
 - 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.4.1...HEAD
+[2.4.1]: https://github.com/Margular/frida-skeleton/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/Margular/frida-skeleton/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Margular/frida-skeleton/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Margular/frida-skeleton/compare/v2.1.1...v2.2.0
