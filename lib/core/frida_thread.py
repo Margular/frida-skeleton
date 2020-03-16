@@ -177,7 +177,7 @@ class FridaThread(threading.Thread):
 
         for app in apps:
             if app.name == self.server_name:
-                self.device.kill(app.pid)
+                self.adb.unsafe_shell('kill {}'.format(app.pid), root=True, debug=False)
 
     def run_frida_server(self):
         self.adb.unsafe_shell('chmod +x /data/local/tmp/' + self.server_name)
