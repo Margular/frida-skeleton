@@ -146,7 +146,7 @@ class FridaThread(threading.Thread):
 
                     # download progress
                     done = int(50 * temp_size / total_size)
-                    sys.stdout.write("\r[{}{}] {}%".format('█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
+                    sys.stdout.write("\r[{}{}] {:.2f}%".format('█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
                     sys.stdout.flush()
 
         sys.stdout.write(os.linesep)
@@ -179,7 +179,7 @@ class FridaThread(threading.Thread):
 
         for app in apps:
             if app.name == self.server_name:
-                self.adb.unsafe_shell('kill {}'.format(app.pid), root=True, debug=False)
+                self.adb.unsafe_shell('kill -9 {}'.format(app.pid), root=True, debug=False)
 
     def run_frida_server(self):
         self.adb.unsafe_shell('chmod +x /data/local/tmp/' + self.server_name)
@@ -189,7 +189,13 @@ class FridaThread(threading.Thread):
         ).start()
 
         # waiting for frida server
-        time.sleep(1)
+        while True:
+            try:
+                time.sleep(0.5)
+                self.device.enumerate_processes()
+                break
+            except (frida.ServerNotRunningError, frida.TransportError, frida.InvalidOperationError):
+                continue
 
     def hook_apps(self):
         apps = set()
