@@ -253,28 +253,30 @@ class FridaThread(threading.Thread):
 
         js += '});'
         script = process.create_script(js)
-        script.on('message', self.on_message)
+        script.on('message', self.on_message(app))
         script.load()
 
-    @staticmethod
-    def on_message(message, data):
-        try:
-            if message['type'] == 'error':
-                text = message['description'].strip()
+    def on_message(self, app: str):
+        def on_message_inner(message, data):
+            try:
+                if message['type'] == 'error':
+                    text = message['description'].strip()
 
-                if not text:
-                    return
+                    if not text:
+                        return
 
-                LOGGER.error(text)
-            else:
-                text = message['payload'].strip() if message['type'] == 'send' else message.strip()
+                    LOGGER.error('[{}] [{}] {}'.format(self.device.id, app, text))
+                else:
+                    text = message['payload'].strip() if message['type'] == 'send' else message.strip()
 
-                if not text:
-                    return
+                    if not text:
+                        return
 
-                LOGGER.info(text)
-        except Exception as e:
-            LOGGER.error(e)
+                    LOGGER.info('[{}] [{}] {}'.format(self.device.id, app, text))
+            except Exception as e:
+                LOGGER.error(e)
+
+        return on_message_inner
 
     def cancel(self):
         self.stop_flag = True
