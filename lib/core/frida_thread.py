@@ -32,7 +32,7 @@ class FridaThread(threading.Thread):
         if device.type == FakeDevice.type:
             # init remote device
             self.log.debug('device {} does not support get_usb_device, changing to get_remote_device'.format(device.id))
-            self.forward_port = port_manager.acquire_port()
+            self.forward_port = port_manager.acquire_port(excludes=[port])
             self.device = frida.get_device_manager().add_remote_device('127.0.0.1:{}'.format(self.forward_port))
             self.device.id = device.id
         else:
@@ -45,7 +45,11 @@ class FridaThread(threading.Thread):
         self.adb = Adb(self.device.id)
 
         if device.type == FakeDevice.type:
-            self.adb.forward(self.forward_port, FRIDA_SERVER_DEFAULT_PORT)
+            result = self.adb.forward(self.forward_port, FRIDA_SERVER_DEFAULT_PORT)
+            # port has been used
+            if len(result['err'].strip()) > 0:
+                port_manager.release_port(self.forward_port)
+                raise RuntimeError('port {} has been used'.format(self.forward_port))
 
         if self.port:
             self.iptables = Iptables(self.adb, self.port)
@@ -146,7 +150,8 @@ class FridaThread(threading.Thread):
 
                     # download progress
                     done = int(50 * temp_size / total_size)
-                    sys.stdout.write("\r[{}{}] {:.2f}%".format('█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
+                    sys.stdout.write(
+                        "\r[{}{}] {:.2f}%".format('█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
                     sys.stdout.flush()
 
         sys.stdout.write(os.linesep)

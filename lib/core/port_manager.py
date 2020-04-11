@@ -19,12 +19,12 @@ class PortManager:
                 continue
             return port
 
-    def acquire_port(self):
+    def acquire_port(self, excludes=None):
         with __lock__:
             while True:
                 port = PortManager.secure_rand_port()
 
-                if port in self.port_map.keys():
+                if port in self.port_map.keys() or port in excludes:
                     continue
 
                 self.port_map[port] = True
