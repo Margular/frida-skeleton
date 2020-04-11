@@ -27,7 +27,7 @@ class FridaThread(threading.Thread):
     def __init__(self, device, install: bool, port: int, regexps: list):
         super().__init__()
 
-        self.log = logging.getLogger(self.__class__.__name__)
+        self.log = logging.getLogger(self.__class__.__name__ + '|' + device.id)
 
         if device.type == FakeDevice.type:
             # init remote device
@@ -265,7 +265,7 @@ class FridaThread(threading.Thread):
         script.load()
 
     def on_message(self, app: str):
-        app_log = logging.getLogger('{} - {}'.format(self.device.id, app))
+        app_log = logging.getLogger('{}|{}|{}'.format(self.__class__.__name__, self.device.id, app))
 
         def on_message_inner(message, data):
             try:
