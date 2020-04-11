@@ -146,7 +146,7 @@ class FridaThread(threading.Thread):
 
                     # download progress
                     done = int(50 * temp_size / total_size)
-                    sys.stdout.write("\r[{}{}] {}%".format('█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
+                    sys.stdout.write("\r[{}{}] {:.2f}%".format('█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
                     sys.stdout.flush()
 
         sys.stdout.write(os.linesep)
