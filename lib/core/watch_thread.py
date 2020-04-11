@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
 import threading
 import time
 
 import frida
 
 from lib.core.frida_thread import FridaThread
-from lib.core.log import LOGGER
 from lib.core.thread_manager import thread_manager
 from lib.core.types import FakeDevice
 from lib.utils.shell import Shell
@@ -18,6 +18,8 @@ class WatchThread(threading.Thread):
     def __init__(self, install: bool, port: int, regexps: list):
         super().__init__()
 
+        self.log = logging.getLogger(self.__class__.__name__)
+
         self.install = install
         self.port = port
         self.regexps = regexps
@@ -27,7 +29,7 @@ class WatchThread(threading.Thread):
         thread_manager.add_thread(self)
 
     def run(self) -> None:
-        LOGGER.debug('{} start'.format(self.__class__.__name__))
+        self.log.debug('{} start'.format(self.__class__.__name__))
 
         while True:
             if self.stop_flag:
@@ -40,7 +42,7 @@ class WatchThread(threading.Thread):
             usb_devices_ids = [device.id for device in usb_devices]
 
             # devices strings from "adb devices"
-            adb_devices_strings = Shell.cmd_and_debug('adb devices', debug=False)['out'].split('\n')[1:]
+            adb_devices_strings = Shell().cmd_and_debug('adb devices', debug=False)['out'].split('\n')[1:]
             adb_devices_strings = [_.split('\t')[0] for _ in adb_devices_strings]
 
             # we need to access these devices remotely
@@ -70,7 +72,7 @@ class WatchThread(threading.Thread):
                 try:
                     frida_thread = FridaThread(device, self.install, self.port, self.regexps)
                 except RuntimeError as e:
-                    LOGGER.error('error occurred when init frida thread: {}'.format(e))
+                    self.log.error('error occurred when init frida thread: {}'.format(e))
                 else:
                     frida_thread.start()
                     self.frida_threads.append(frida_thread)
@@ -78,7 +80,7 @@ class WatchThread(threading.Thread):
             time.sleep(0.1)
 
         self.shutdown()
-        LOGGER.debug('watch thread exit')
+        self.log.debug('watch thread exit')
 
     def cancel(self):
         self.stop_flag = True

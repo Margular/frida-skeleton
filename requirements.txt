@@ -1,4 +1,4 @@
+coloredlogs
 frida
 requests
 urllib3
-

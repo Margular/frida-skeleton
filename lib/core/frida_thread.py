@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
 import lzma
 import os
 import re
@@ -11,7 +12,6 @@ import time
 import frida
 import requests
 
-from lib.core.log import LOGGER
 from lib.core.port_manager import port_manager
 from lib.core.settings import ROOT_DIR, FRIDA_SERVER_DEFAULT_PORT
 from lib.core.thread_manager import thread_manager
@@ -27,9 +27,11 @@ class FridaThread(threading.Thread):
     def __init__(self, device, install: bool, port: int, regexps: list):
         super().__init__()
 
+        self.log = logging.getLogger(self.__class__.__name__)
+
         if device.type == FakeDevice.type:
             # init remote device
-            LOGGER.debug('device {} does not support get_usb_device, changing to get_remote_device'.format(device.id))
+            self.log.debug('device {} does not support get_usb_device, changing to get_remote_device'.format(device.id))
             self.forward_port = port_manager.acquire_port()
             self.device = frida.get_device_manager().add_remote_device('127.0.0.1:{}'.format(self.forward_port))
             self.device.id = device.id
@@ -68,21 +70,21 @@ class FridaThread(threading.Thread):
         thread_manager.add_thread(self)
 
     def run(self) -> None:
-        LOGGER.info("{} start with hook device: id={}, name={}, type={}".format(
+        self.log.info("{} start with hook device: id={}, name={}, type={}".format(
             self.__class__.__name__, self.device.id, self.device.name, self.device.type))
 
         try:
             self.prepare()
             self.hook_apps()
         except Exception as e:
-            LOGGER.error('device {}: {}'.format(self.device.id, e))
+            self.log.error('device {}: {}'.format(self.device.id, e))
 
         try:
             self.shutdown()
         except Exception as e:
-            LOGGER.error('unexpected error occurred when shutdown device {}: {}'.format(self.device.id, e))
+            self.log.error('unexpected error occurred when shutdown device {}: {}'.format(self.device.id, e))
 
-        LOGGER.debug('device {} exit'.format(self.device.id))
+        self.log.debug('device {} exit'.format(self.device.id))
         thread_manager.del_thread(self)
 
     # prepare for starting hook
@@ -117,15 +119,15 @@ class FridaThread(threading.Thread):
             temp_size = 0
 
         if temp_size == total_size:
-            LOGGER.info('{} has downloaded completely'.format(file_path))
+            self.log.info('{} has downloaded completely'.format(file_path))
             return
 
         if temp_size > total_size:
-            LOGGER.error('{} has corrupted, download it again'.format(file_path))
+            self.log.error('{} has corrupted, download it again'.format(file_path))
             os.remove(file_path)
             return self.download(url, file_path)
 
-        LOGGER.debug('{} of {} needs to be download'.format(total_size - temp_size, total_size))
+        self.log.debug('{} of {} needs to be download'.format(total_size - temp_size, total_size))
 
         # download from temp size to end
         headers = {'Range': 'bytes={}-'.format(temp_size)}
@@ -155,7 +157,7 @@ class FridaThread(threading.Thread):
 
         # if not exist frida server then install it
         if not self.adb.unsafe_shell("ls /data/local/tmp/" + self.server_name)['out']:
-            LOGGER.info('download {} from github ...'.format(self.server_name))
+            self.log.info('download {} from github ...'.format(self.server_name))
             with __lock__:
                 self.download('https://github.com/frida/frida/releases/download/{}/{}.xz'
                               .format(frida.__version__, self.server_name), server_path_xz)
@@ -218,7 +220,7 @@ class FridaThread(threading.Thread):
                         try:
                             self.hook(incremental_app)
                         except Exception as e:
-                            LOGGER.error(e)
+                            self.log.error(e)
                         finally:
                             break
 
@@ -228,7 +230,7 @@ class FridaThread(threading.Thread):
 
                 for regexp in self.regexps:
                     if re.search(regexp, decremental_app):
-                        LOGGER.info('app {} has died'.format(decremental_app))
+                        self.log.info('app {} has died'.format(decremental_app))
                         break
 
             apps = new_apps
@@ -238,7 +240,7 @@ class FridaThread(threading.Thread):
         if not app:
             raise RuntimeError('try to hook empty app name')
 
-        LOGGER.info('hook app ' + app)
+        self.log.info('hook app ' + app)
         process = self.device.attach(app)
         js = 'Java.perform(function() {'
 
@@ -253,34 +255,38 @@ class FridaThread(threading.Thread):
 
         js += '});'
         script = process.create_script(js)
-        script.on('message', self.on_message)
+        script.on('message', self.on_message(app))
         script.load()
 
-    @staticmethod
-    def on_message(message, data):
-        try:
-            if message['type'] == 'error':
-                text = message['description'].strip()
+    def on_message(self, app: str):
+        app_log = logging.getLogger('{} - {}'.format(self.device.id, app))
 
-                if not text:
-                    return
+        def on_message_inner(message, data):
+            try:
+                if message['type'] == 'error':
+                    text = message['description'].strip()
 
-                LOGGER.error(text)
-            else:
-                text = message['payload'].strip() if message['type'] == 'send' else message.strip()
+                    if not text:
+                        return
 
-                if not text:
-                    return
+                    app_log.error(text)
+                else:
+                    text = message['payload'].strip() if message['type'] == 'send' else message.strip()
 
-                LOGGER.info(text)
-        except Exception as e:
-            LOGGER.error(e)
+                    if not text:
+                        return
+
+                    app_log.info(text)
+            except Exception as e:
+                app_log.error(e)
+
+        return on_message_inner
 
     def cancel(self):
         self.stop_flag = True
 
     def shutdown(self):
-        LOGGER.debug('shutdown device ' + self.device.id)
+        self.log.debug('shutdown device ' + self.device.id)
 
         self.kill_frida_servers()
 

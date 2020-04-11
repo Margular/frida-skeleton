@@ -6,14 +6,16 @@ from lib.utils.shell import Shell
 
 class Adb(Shell):
     def __init__(self, serial=""):
+        super().__init__()
+
         self.serial = serial
         # if we are root shell
         self.is_root = False
         self.check_root()
 
-    @classmethod
-    def start_server(cls):
-        return cls.cmd_and_debug('adb start-server')
+    @staticmethod
+    def start_server():
+        return Shell().cmd_and_debug('adb start-server')
 
     def check_root(self):
         if self.unsafe_shell('whoami')['out'] == 'root':
