@@ -35,6 +35,8 @@ class FridaSkeleton:
                             help='install frida server to /data/local/tmp automatically')
         parser.add_argument('-p', '--port', type=int,
                             help='reverse tcp port, if specified, manipulate iptables automatically')
+        parser.add_argument('-s', '--spawn', action='store_true',
+                            help='spawn mode on, attach mode off')
         parser.add_argument('-v', action='store_true', help='verbose output')
 
         args = parser.parse_args()
@@ -57,7 +59,7 @@ class FridaSkeleton:
 
             Adb.start_server()
 
-            watch_thread = WatchThread(args.install, args.port, args.regexps)
+            watch_thread = WatchThread(args.install, args.port, args.regexps, args.spawn)
         except (KeyboardInterrupt, InterruptedError) as e:
             self.log.info(e)
             sys.exit(-1)
