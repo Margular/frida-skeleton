@@ -24,7 +24,7 @@ __lock__ = threading.Lock()
 
 class FridaThread(threading.Thread):
 
-    def __init__(self, device, install: bool, port: int, regexps: list):
+    def __init__(self, device, install: bool, port: int, regexps: list, spawn: bool):
         super().__init__()
 
         self.log = logging.getLogger(self.__class__.__name__ + '|' + device.id)
@@ -41,6 +41,7 @@ class FridaThread(threading.Thread):
         self.install = install
         self.port = port
         self.regexps = regexps if regexps else ['.*']
+        self.spawn = spawn
 
         self.adb = Adb(self.device.id)
 
@@ -252,7 +253,10 @@ class FridaThread(threading.Thread):
             raise RuntimeError('try to hook empty app name')
 
         self.log.info('hook app ' + app)
-        process = self.device.attach(app)
+        if self.spawn:
+            process = self.device.attach(self.device.spawn(app))
+        else:
+            process = self.device.attach(app)
         js = 'Java.perform(function() {'
 
         # load all scripts under folder 'scripts'
@@ -268,6 +272,9 @@ class FridaThread(threading.Thread):
         script = process.create_script(js)
         script.on('message', self.on_message(app))
         script.load()
+
+        if self.spawn:
+            self.device.resume(self.device.get_process(app).pid)
 
     def on_message(self, app: str):
         app_log = logging.getLogger('{}|{}|{}'.format(self.__class__.__name__, self.device.id, app))
