@@ -1,17 +1,3 @@
-## 前提条件
-
-python3
-
-frida
-
-
-
-使用前请先安装依赖：
-
-pip install -r requirements.txt
-
-
-
 ## 一句话简介
 
 frida-skeleton会根据指定的正则表达式持续监听并hook对应的程序，遍历scripts目录下的所有js文件并将它们全部加载用以hook这些程序
@@ -26,6 +12,7 @@ frida-skeleton会根据指定的正则表达式持续监听并hook对应的程�
 
 * -i: 自动从github安装对应版本和架构的frida-server，安装是在插入USB后进行的，不会提前安装，frida-server会下载到assets目录下，支持断点续传，并且不会重复下载；下载完之后会自动通过adb push到/data/local/tmp目录下并自动添加执行权限以及在后台运行
 * -p PORT: 如-p 8080，会自动利用iptables将所有的TCP流量重定向到安卓的8080端口，并且还会通过adb reverse将安卓上的8080映射到本机的8080，这样就可以在本机用Burp Suite监听8080端口来抓包了（是不是很方便呢）
+* -s: 激活spawn模式，默认是attach模式，开启此选项会导致目标进程自动重启，请提前保存重要内容
 * -v: debug模式，会输出更多的信息
 * regexps: 支持多个正则表达式，frida-skeleton会根据你指定的正则表达式去匹配包名hook对应的程序
 
@@ -35,7 +22,7 @@ frida-skeleton会根据指定的正则表达式持续监听并hook对应的程�
 
 你可以在这里获取示例中的apk：[示例APK](https://github.com/Margular/frida-skeleton/releases)
 
-![](./assets/sample.png)
+[![asciicast](https://asciinema.org/a/334653.png)](https://asciinema.org/a/334653)
 
 
 
@@ -46,7 +33,6 @@ frida-skeleton会根据指定的正则表达式持续监听并hook对应的程�
 * logs: 日志文件
 * scripts: 这个目录下面的所有js文件都会被加载用来hook对应的程序
 * tests: 示例代码，目前只有一个安卓程序
-* thirdparty: 第三方python库
 
 
 
