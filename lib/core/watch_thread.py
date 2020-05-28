@@ -15,7 +15,7 @@ from lib.utils.shell import Shell
 
 class WatchThread(threading.Thread):
 
-    def __init__(self, install: bool, port: int, regexps: list):
+    def __init__(self, install: bool, port: int, regexps: list, spawn: bool):
         super().__init__()
 
         self.log = logging.getLogger(self.__class__.__name__)
@@ -23,6 +23,7 @@ class WatchThread(threading.Thread):
         self.install = install
         self.port = port
         self.regexps = regexps
+        self.spawn = spawn
         self.frida_threads = []
         self.stop_flag = False
 
@@ -70,7 +71,7 @@ class WatchThread(threading.Thread):
                     continue
 
                 try:
-                    frida_thread = FridaThread(device, self.install, self.port, self.regexps)
+                    frida_thread = FridaThread(device, self.install, self.port, self.regexps, self.spawn)
                 except RuntimeError as e:
                     self.log.error('error occurred when init frida thread: {}'.format(e))
                 else:

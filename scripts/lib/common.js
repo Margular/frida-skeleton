@@ -1,20 +1,20 @@
 /*
  * Description: Common functions for common usage.
  * Author: Margular
- * Date: 2019-12-22
- * Version: 1.1
+ * Date: 2020-05-28
+ * Version: 1.2
  */
 
-var Class = Java.use("java.lang.Class");
-var StringBuilder = Java.use("java.lang.StringBuilder");
+const JClass = Java.use("java.lang.Class");
+const JStringBuilder = Java.use("java.lang.StringBuilder");
 
 /* return values of declared fields of an object
  * o: object to extract
  * parent: a boolean variable that indicates whether to extract parent fields of the object
  */
 function extractDeclaredFields(o) {
-    var currentClass = Java.cast(o.getClass(), Class);
-    var sb = StringBuilder.$new();
+    var currentClass = Java.cast(o.getClass(), JClass);
+    var sb = JStringBuilder.$new();
 
     while (currentClass.__proto__.hasOwnProperty('getName')) {
         sb.append(currentClass.getName()).append("=====");
@@ -39,6 +39,10 @@ function implementationWrapper(method, func) {
     var func_name = "_func_" + func_index + "_";
     global[func_name] = func;
 
+    function _pretty_(p) {
+        return "pretty(" + p + ")";
+    }
+
     var params = [];
 
     if (func.length > 0) {
@@ -54,10 +58,10 @@ function implementationWrapper(method, func) {
     var funcDetail = method + "(\" + ";
 
     if (params.length > 0) {
-        funcDetail += params[0];
+        funcDetail += _pretty_(params[0]);
 
         for (var j = 1; j < func.length; j++) {
-            funcDetail += " + \", \" + " + params[j];
+            funcDetail += " + \", \" + " + _pretty_(params[j]);
         }
     } else
         funcDetail += "\"\"";
@@ -73,9 +77,22 @@ function implementationWrapper(method, func) {
     else
         impl += ");\n";
 
-    impl += "send(\"" + funcDetail + " => \" + ret);\n";
+    impl += "send(\"" + funcDetail + " => \" + pretty(ret));\n";
     impl += "return ret;\n";
     impl += "};\n";
 
     eval(impl);
+}
+
+function pretty(obj) {
+    if (typeof obj === "string") {
+        return obj;
+    }
+
+    // byte array
+    if (obj.__proto__ === Java.array('byte', []).__proto__) {
+        return "<[B> " + Conversion.bytes2hex(obj);
+    }
+
+    return obj;
 }
