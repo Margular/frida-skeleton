@@ -12,7 +12,6 @@ import urllib3
 
 from lib.core.options import options
 from lib.core.settings import LOG_DIR, LOG_FILENAME
-from lib.core.thread_manager import thread_manager
 from lib.core.watch_thread import WatchThread
 from lib.utils.adb import Adb
 
@@ -45,36 +44,25 @@ class FridaSkeleton:
             Adb.start_server()
 
             watch_thread = WatchThread()
-        except (KeyboardInterrupt, InterruptedError) as e:
-            self.log.info(e)
-            sys.exit(-1)
 
-        try:
-            watch_thread.start()
-            while True:
-                time.sleep(1)
-        except MainExit:
-            while True:
-                try:
-                    self.log.info('shutdown command received, wait for clean up please...')
-                    watch_thread.cancel()
-                    break
-                except MainExit:
-                    pass
-
-        # waiting for sub threads
-        while True:
             try:
+                watch_thread.start()
                 while True:
-                    self.should_we_exit()
                     time.sleep(1)
             except MainExit:
-                try:
-                    n = len(thread_manager.thread_map)
-                    if n > 0:
-                        self.log.info('running sub threads: {}, wait a second please'.format(n))
-                except MainExit:
-                    pass
+                while True:
+                    try:
+                        self.log.info('shutdown command received, wait for clean up please...')
+                        watch_thread.terminate()
+                        while watch_thread.is_alive():
+                            time.sleep(1)
+                        break
+                    except MainExit:
+                        pass
+        except (KeyboardInterrupt, InterruptedError):
+            pass
+
+        self.log.info('thank you for using, bye!')
 
     def shutdown(self, signum, frame):
         if signum == signal.SIGINT:
@@ -85,11 +73,6 @@ class FridaSkeleton:
             self.log.warning('unknown event detected')
 
         raise MainExit
-
-    def should_we_exit(self):
-        if thread_manager.is_empty():
-            self.log.info('sub threads exit completely, bye!')
-            sys.exit(0)
 
 
 if __name__ == '__main__':

@@ -15,7 +15,6 @@ import requests
 from lib.core.options import options
 from lib.core.port_manager import port_manager
 from lib.core.settings import ROOT_DIR, FRIDA_SERVER_DEFAULT_PORT
-from lib.core.thread_manager import thread_manager
 from lib.core.types import FakeDevice
 from lib.utils.adb import Adb
 from lib.utils.iptables import Iptables
@@ -66,9 +65,7 @@ class FridaThread(threading.Thread):
 
         self.server_name = 'frida-server-{}-android-{}'.format(frida.__version__, self.arch)
 
-        self.stop_flag = False
-
-        thread_manager.add_thread(self)
+        self._terminate = False
 
     def run(self) -> None:
         self.log.info("{} start with hook device: id={}, name={}, type={}".format(
@@ -86,10 +83,12 @@ class FridaThread(threading.Thread):
             self.log.error('unexpected error occurred when shutdown device {}: {}'.format(self.device.id, e))
 
         self.log.debug('device {} exit'.format(self.device.id))
-        thread_manager.del_thread(self)
 
     # prepare for starting hook
     def prepare(self):
+        if self._terminate:
+            return
+
         # get root
         self.adb.root()
 
@@ -137,7 +136,7 @@ class FridaThread(threading.Thread):
 
         with open(file_path, "ab") as f:
             for chunk in r.iter_content(chunk_size=1024):
-                if self.stop_flag:
+                if self._terminate:
                     break
 
                 if chunk:
@@ -194,7 +193,8 @@ class FridaThread(threading.Thread):
         while True:
             try:
                 time.sleep(0.5)
-                self.device.enumerate_processes()
+                if not self._terminate:
+                    self.device.enumerate_processes()
                 break
             except (frida.ServerNotRunningError, frida.TransportError, frida.InvalidOperationError):
                 continue
@@ -204,7 +204,7 @@ class FridaThread(threading.Thread):
 
         # monitor apps
         while True:
-            if self.stop_flag:
+            if self._terminate:
                 break
 
             time.sleep(0.1)
@@ -217,7 +217,7 @@ class FridaThread(threading.Thread):
             decremental_apps = apps - new_apps
 
             for incremental_app in incremental_apps:
-                if self.stop_flag:
+                if self._terminate:
                     break
 
                 for regexp in options.regexps:
@@ -233,7 +233,7 @@ class FridaThread(threading.Thread):
                             break
 
             for decremental_app in decremental_apps:
-                if self.stop_flag:
+                if self._terminate:
                     break
 
                 for regexp in options.regexps:
@@ -244,6 +244,9 @@ class FridaThread(threading.Thread):
             apps = new_apps
 
     def hook(self, app: str):
+        if self._terminate:
+            return
+
         app = app.strip()
         if not app:
             raise RuntimeError('try to hook empty app name')
@@ -296,8 +299,8 @@ class FridaThread(threading.Thread):
 
         return on_message_inner
 
-    def cancel(self):
-        self.stop_flag = True
+    def terminate(self):
+        self._terminate = True
 
     def shutdown(self):
         self.log.debug('shutdown device ' + self.device.id)

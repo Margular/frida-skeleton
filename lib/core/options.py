@@ -17,8 +17,8 @@ class Options:
                             help='install frida server to /data/local/tmp automatically')
         parser.add_argument('-p', '--port', type=int,
                             help='reverse tcp port, if specified, manipulate iptables automatically, data flow: '
-                                 'mobile | all tcp streams -> mobile | tcp 8080 -> your pc/laptop | tcp 8080, done '
-                                 'by iptables and adb reverse')
+                                 'mobile | all tcp streams -> mobile | random tcp port -> your pc/laptop | '
+                                 'tcp PORT, done by iptables and adb reverse')
         parser.add_argument('-s', '--spawn', action='store_true',
                             help='spawn mode on, attach mode off, same as native frida')
         parser.add_argument('-v', '--verbose', action='store_true', help='verbose output')
