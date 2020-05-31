@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 import logging
 import os
 import signal
@@ -11,8 +10,8 @@ import time
 import coloredlogs
 import urllib3
 
-from lib.core.settings import LOG_DIR
-from lib.core.thread_manager import thread_manager
+from lib.core.options import options
+from lib.core.settings import LOG_DIR, LOG_FILENAME
 from lib.core.watch_thread import WatchThread
 from lib.utils.adb import Adb
 
@@ -25,32 +24,17 @@ class MainExit(Exception):
 
 
 class FridaSkeleton:
+
     def __init__(self):
-        parser = argparse.ArgumentParser(description='A tool that hook all apps you need')
-
-        parser.add_argument('regexps', type=str, nargs='*',
-                            help=r'Regexps for the apps you want to hook such as "^com\.baidu\.", '
-                                 r'empty for hooking all apps')
-        parser.add_argument('-i', '--install', action='store_true',
-                            help='install frida server to /data/local/tmp automatically')
-        parser.add_argument('-p', '--port', type=int,
-                            help='reverse tcp port, if specified, manipulate iptables automatically')
-        parser.add_argument('-s', '--spawn', action='store_true',
-                            help='spawn mode on, attach mode off')
-        parser.add_argument('-v', action='store_true', help='verbose output')
-
-        args = parser.parse_args()
-
         try:
             self.log = logging.getLogger(self.__class__.__name__)
 
-            level = 'DEBUG' if args.v else 'INFO'
+            level = logging.DEBUG if options.verbose else logging.INFO
             coloredlogs.install(level=level)
 
             # set log
             os.makedirs(LOG_DIR, mode=0o700, exist_ok=True)
-            log_filename = time.strftime('%Y-%m-%d_%H-%M-%S.log')
-            log_file = open(os.path.join(LOG_DIR, log_filename), 'a', encoding='utf-8')
+            log_file = open(os.path.join(LOG_DIR, LOG_FILENAME), 'a', encoding='utf-8')
             coloredlogs.install(level=level, stream=log_file)
 
             # set handling interrupt exceptions
@@ -59,37 +43,26 @@ class FridaSkeleton:
 
             Adb.start_server()
 
-            watch_thread = WatchThread(args.install, args.port, args.regexps, args.spawn)
-        except (KeyboardInterrupt, InterruptedError) as e:
-            self.log.info(e)
-            sys.exit(-1)
+            watch_thread = WatchThread()
 
-        try:
-            watch_thread.start()
-            while True:
-                time.sleep(1)
-        except MainExit:
-            while True:
-                try:
-                    self.log.info('shutdown command received, wait for clean up please...')
-                    watch_thread.cancel()
-                    break
-                except MainExit:
-                    pass
-
-        # waiting for sub threads
-        while True:
             try:
+                watch_thread.start()
                 while True:
-                    self.should_we_exit()
                     time.sleep(1)
             except MainExit:
-                try:
-                    n = len(thread_manager.thread_map)
-                    if n > 0:
-                        self.log.info('running sub threads: {}, wait a second please'.format(n))
-                except MainExit:
-                    pass
+                while True:
+                    try:
+                        self.log.info('shutdown command received, wait for clean up please...')
+                        watch_thread.terminate()
+                        while watch_thread.is_alive():
+                            time.sleep(1)
+                        break
+                    except MainExit:
+                        pass
+        except (KeyboardInterrupt, InterruptedError):
+            pass
+
+        self.log.info('thank you for using, bye!')
 
     def shutdown(self, signum, frame):
         if signum == signal.SIGINT:
@@ -101,11 +74,6 @@ class FridaSkeleton:
 
         raise MainExit
 
-    def should_we_exit(self):
-        if thread_manager.is_empty():
-            self.log.info('sub threads exit completely, bye!')
-            sys.exit(0)
-
 
 if __name__ == '__main__':
-    FridaSkeleton()
+    main = FridaSkeleton()

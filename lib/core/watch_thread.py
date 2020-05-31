@@ -8,32 +8,25 @@ import time
 import frida
 
 from lib.core.frida_thread import FridaThread
-from lib.core.thread_manager import thread_manager
 from lib.core.types import FakeDevice
 from lib.utils.shell import Shell
 
 
 class WatchThread(threading.Thread):
 
-    def __init__(self, install: bool, port: int, regexps: list, spawn: bool):
+    def __init__(self):
         super().__init__()
 
         self.log = logging.getLogger(self.__class__.__name__)
 
-        self.install = install
-        self.port = port
-        self.regexps = regexps
-        self.spawn = spawn
         self.frida_threads = []
-        self.stop_flag = False
-
-        thread_manager.add_thread(self)
+        self._terminate = False
 
     def run(self) -> None:
         self.log.debug('{} start'.format(self.__class__.__name__))
 
         while True:
-            if self.stop_flag:
+            if self._terminate:
                 break
 
             devices = frida.enumerate_devices()
@@ -71,7 +64,7 @@ class WatchThread(threading.Thread):
                     continue
 
                 try:
-                    frida_thread = FridaThread(device, self.install, self.port, self.regexps, self.spawn)
+                    frida_thread = FridaThread(device)
                 except RuntimeError as e:
                     self.log.error('error occurred when init frida thread: {}'.format(e))
                 else:
@@ -83,12 +76,13 @@ class WatchThread(threading.Thread):
         self.shutdown()
         self.log.debug('watch thread exit')
 
-    def cancel(self):
-        self.stop_flag = True
+    def terminate(self):
+        self._terminate = True
 
     def shutdown(self):
         for frida_thread in self.frida_threads:
             if frida_thread.is_alive():
-                frida_thread.cancel()
+                frida_thread.terminate()
 
-        thread_manager.del_thread(self)
+        for frida_thread in self.frida_threads:
+            frida_thread.join()

@@ -3,6 +3,7 @@
 
 import os
 import sys
+import time
 
 import coloredlogs
 
@@ -12,6 +13,7 @@ PLATFORM = os.name
 IS_WIN = PLATFORM == "nt"
 ROOT_DIR = os.path.dirname(sys.argv[0])
 LOG_DIR = os.path.join(ROOT_DIR, 'logs')
+LOG_FILENAME = time.strftime('%Y-%m-%d_%H-%M-%S.log')
 FRIDA_SERVER_DEFAULT_PORT = 27042
 
 # coloredlogs
