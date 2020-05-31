@@ -12,6 +12,7 @@ import time
 import frida
 import requests
 
+from lib.core.options import options
 from lib.core.port_manager import port_manager
 from lib.core.settings import ROOT_DIR, FRIDA_SERVER_DEFAULT_PORT
 from lib.core.thread_manager import thread_manager
@@ -24,7 +25,7 @@ __lock__ = threading.Lock()
 
 class FridaThread(threading.Thread):
 
-    def __init__(self, device, install: bool, port: int, regexps: list, spawn: bool):
+    def __init__(self, device):
         super().__init__()
 
         self.log = logging.getLogger(self.__class__.__name__ + '|' + device.id)
@@ -32,16 +33,11 @@ class FridaThread(threading.Thread):
         if device.type == FakeDevice.type:
             # init remote device
             self.log.debug('device {} does not support get_usb_device, changing to get_remote_device'.format(device.id))
-            self.forward_port = port_manager.acquire_port(excludes=[port])
+            self.forward_port = port_manager.acquire_port(excludes=[options.port])
             self.device = frida.get_device_manager().add_remote_device('127.0.0.1:{}'.format(self.forward_port))
             self.device.id = device.id
         else:
             self.device = device
-
-        self.install = install
-        self.port = port
-        self.regexps = regexps if regexps else ['.*']
-        self.spawn = spawn
 
         self.adb = Adb(self.device.id)
 
@@ -52,8 +48,8 @@ class FridaThread(threading.Thread):
                 port_manager.release_port(self.forward_port)
                 raise RuntimeError('port {} has been used'.format(self.forward_port))
 
-        if self.port:
-            self.iptables = Iptables(self.adb, self.port)
+        if options.port:
+            self.iptables = Iptables(self.adb, options.port)
 
         self.arch = self.adb.unsafe_shell("getprop ro.product.cpu.abi")['out']
         # maybe get 'arm64-v8a', 'arm-v7a' ...
@@ -101,12 +97,12 @@ class FridaThread(threading.Thread):
         self.adb.unsafe_shell('setenforce 0', root=True)
 
         # install iptables and reverse tcp port
-        if self.port:
+        if options.port:
             # enable tcp connections between frida server and binding
             self.iptables.install()
-            self.adb.reverse(self.port)
+            self.adb.reverse(options.port)
 
-        if self.install:
+        if options.install:
             self.install_frida_server()
 
         self.kill_frida_servers()
@@ -224,7 +220,7 @@ class FridaThread(threading.Thread):
                 if self.stop_flag:
                     break
 
-                for regexp in self.regexps:
+                for regexp in options.regexps:
                     if re.search(regexp, incremental_app):
                         # waiting for app startup completely
                         time.sleep(0.1)
@@ -240,7 +236,7 @@ class FridaThread(threading.Thread):
                 if self.stop_flag:
                     break
 
-                for regexp in self.regexps:
+                for regexp in options.regexps:
                     if re.search(regexp, decremental_app):
                         self.log.info('app {} has died'.format(decremental_app))
                         break
@@ -253,7 +249,7 @@ class FridaThread(threading.Thread):
             raise RuntimeError('try to hook empty app name')
 
         self.log.info('hook app ' + app)
-        if self.spawn:
+        if options.spawn:
             process = self.device.attach(self.device.spawn(app))
         else:
             process = self.device.attach(app)
@@ -273,7 +269,7 @@ class FridaThread(threading.Thread):
         script.on('message', self.on_message(app))
         script.load()
 
-        if self.spawn:
+        if options.spawn:
             self.device.resume(self.device.get_process(app).pid)
 
     def on_message(self, app: str):
@@ -312,6 +308,6 @@ class FridaThread(threading.Thread):
             port_manager.release_port(self.forward_port)
             self.adb.clear_forward(self.forward_port)
 
-        if self.port:
+        if options.port:
             self.iptables.uninstall()
-            self.adb.clear_reverse(self.port)
+            self.adb.clear_reverse(options.port)

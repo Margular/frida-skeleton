@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 import logging
 import os
 import signal
@@ -11,7 +10,8 @@ import time
 import coloredlogs
 import urllib3
 
-from lib.core.settings import LOG_DIR
+from lib.core.options import options
+from lib.core.settings import LOG_DIR, LOG_FILENAME
 from lib.core.thread_manager import thread_manager
 from lib.core.watch_thread import WatchThread
 from lib.utils.adb import Adb
@@ -25,32 +25,17 @@ class MainExit(Exception):
 
 
 class FridaSkeleton:
+
     def __init__(self):
-        parser = argparse.ArgumentParser(description='A tool that hook all apps you need')
-
-        parser.add_argument('regexps', type=str, nargs='*',
-                            help=r'Regexps for the apps you want to hook such as "^com\.baidu\.", '
-                                 r'empty for hooking all apps')
-        parser.add_argument('-i', '--install', action='store_true',
-                            help='install frida server to /data/local/tmp automatically')
-        parser.add_argument('-p', '--port', type=int,
-                            help='reverse tcp port, if specified, manipulate iptables automatically')
-        parser.add_argument('-s', '--spawn', action='store_true',
-                            help='spawn mode on, attach mode off')
-        parser.add_argument('-v', action='store_true', help='verbose output')
-
-        args = parser.parse_args()
-
         try:
             self.log = logging.getLogger(self.__class__.__name__)
 
-            level = 'DEBUG' if args.v else 'INFO'
+            level = logging.DEBUG if options.verbose else logging.INFO
             coloredlogs.install(level=level)
 
             # set log
             os.makedirs(LOG_DIR, mode=0o700, exist_ok=True)
-            log_filename = time.strftime('%Y-%m-%d_%H-%M-%S.log')
-            log_file = open(os.path.join(LOG_DIR, log_filename), 'a', encoding='utf-8')
+            log_file = open(os.path.join(LOG_DIR, LOG_FILENAME), 'a', encoding='utf-8')
             coloredlogs.install(level=level, stream=log_file)
 
             # set handling interrupt exceptions
@@ -59,7 +44,7 @@ class FridaSkeleton:
 
             Adb.start_server()
 
-            watch_thread = WatchThread(args.install, args.port, args.regexps, args.spawn)
+            watch_thread = WatchThread()
         except (KeyboardInterrupt, InterruptedError) as e:
             self.log.info(e)
             sys.exit(-1)
@@ -108,4 +93,4 @@ class FridaSkeleton:
 
 
 if __name__ == '__main__':
-    FridaSkeleton()
+    main = FridaSkeleton()
