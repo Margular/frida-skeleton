@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2020-05-28
+
+### Add
+
+- 新增spawn模式，使用-s参数激活
+- 新增byte[]和hex格式之间的转化，并在implementationWrapper内部自动判断是否是byte[]，如果是则以hex格式输出
+
+### Changed
+
+- 日志输出格式优化，现在会标记是哪个设备的哪个apk打印的
+- 下载frida-server的时候显示百分比优化，现在固定xx.xx%的格式
+- PortManager在获取随机端口的时候会剔除本机已开启的端口
+
 ## [2.4.1] - 2020-03-16
 
 ### Changed
@@ -94,7 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 内置jni函数hook方法
 - 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.4.1...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/Margular/frida-skeleton/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/Margular/frida-skeleton/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/Margular/frida-skeleton/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Margular/frida-skeleton/compare/v2.2.0...v2.3.0
