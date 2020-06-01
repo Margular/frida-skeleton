@@ -82,7 +82,9 @@ class WatchThread(threading.Thread):
     def shutdown(self):
         for frida_thread in self.frida_threads:
             if frida_thread.is_alive():
+                self.log.debug('waiting for {}'.format(frida_thread.device))
                 frida_thread.terminate()
 
         for frida_thread in self.frida_threads:
-            frida_thread.join()
+            while frida_thread.is_alive():
+                time.sleep(1)

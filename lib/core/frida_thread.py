@@ -8,6 +8,7 @@ import re
 import sys
 import threading
 import time
+from concurrent.futures.thread import ThreadPoolExecutor
 
 import frida
 import requests
@@ -27,11 +28,13 @@ class FridaThread(threading.Thread):
     def __init__(self, device):
         super().__init__()
 
+        self.server_executor = ThreadPoolExecutor(max_workers=1)
         self.log = logging.getLogger(self.__class__.__name__ + '|' + device.id)
 
         if device.type == FakeDevice.type:
             # init remote device
-            self.log.debug('device {} does not support get_usb_device, changing to get_remote_device'.format(device.id))
+            self.log.debug('device {} does not support get_usb_device, changing to get_remote_device method'
+                           .format(device.id))
             self.forward_port = port_manager.acquire_port(excludes=[options.port])
             self.device = frida.get_device_manager().add_remote_device('127.0.0.1:{}'.format(self.forward_port))
             self.device.id = device.id
@@ -184,10 +187,7 @@ class FridaThread(threading.Thread):
 
     def run_frida_server(self):
         self.adb.unsafe_shell('chmod +x /data/local/tmp/' + self.server_name)
-        threading.Thread(
-            target=self.adb.unsafe_shell,
-            args=('/data/local/tmp/{} -D'.format(self.server_name), True)
-        ).start()
+        self.server_executor.submit(self.adb.unsafe_shell, '/data/local/tmp/{} -D'.format(self.server_name), True)
 
         # waiting for frida server
         while True:
@@ -305,6 +305,7 @@ class FridaThread(threading.Thread):
     def shutdown(self):
         self.log.debug('shutdown device ' + self.device.id)
 
+        self.server_executor.shutdown(True)
         self.kill_frida_servers()
 
         if self.device.type == 'remote':
