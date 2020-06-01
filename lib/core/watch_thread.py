@@ -36,7 +36,7 @@ class WatchThread(threading.Thread):
             usb_devices_ids = [device.id for device in usb_devices]
 
             # devices strings from "adb devices"
-            adb_devices_strings = Shell().cmd_and_debug('adb devices', debug=False)['out'].split('\n')[1:]
+            adb_devices_strings = Shell().exec('adb devices', quiet=True).out.split('\n')[1:]
             adb_devices_strings = [_.split('\t')[0] for _ in adb_devices_strings]
 
             # we need to access these devices remotely

@@ -1,3 +1,4 @@
+attrdict
 coloredlogs
 frida
 requests

@@ -46,14 +46,14 @@ class FridaThread(threading.Thread):
         if device.type == FakeDevice.type:
             result = self.adb.forward(self.forward_port, FRIDA_SERVER_DEFAULT_PORT)
             # port has been used
-            if len(result['err'].strip()) > 0:
+            if result.err:
                 port_manager.release_port(self.forward_port)
                 raise RuntimeError('port {} has been used'.format(self.forward_port))
 
         if options.port:
             self.iptables = Iptables(self.adb, options.port)
 
-        self.arch = self.adb.unsafe_shell("getprop ro.product.cpu.abi")['out']
+        self.arch = self.adb.unsafe_shell("getprop ro.product.cpu.abi").out
         # maybe get 'arm64-v8a', 'arm-v7a' ...
         if 'arm64' in self.arch:
             self.arch = 'arm64'
@@ -160,7 +160,7 @@ class FridaThread(threading.Thread):
         server_path_xz = server_path + '.xz'
 
         # if not exist frida server then install it
-        if not self.adb.unsafe_shell("ls /data/local/tmp/" + self.server_name)['out']:
+        if not self.adb.unsafe_shell("ls /data/local/tmp/" + self.server_name).out:
             self.log.info('download {} from github ...'.format(self.server_name))
             with __lock__:
                 self.download('https://github.com/frida/frida/releases/download/{}/{}.xz'
@@ -183,7 +183,7 @@ class FridaThread(threading.Thread):
 
         for app in apps:
             if app.name == self.server_name:
-                self.adb.unsafe_shell('kill -9 {}'.format(app.pid), root=True, debug=False)
+                self.adb.unsafe_shell('kill -9 {}'.format(app.pid), root=True, quiet=True)
 
     def run_frida_server(self):
         self.adb.unsafe_shell('chmod +x /data/local/tmp/' + self.server_name)
@@ -305,9 +305,6 @@ class FridaThread(threading.Thread):
     def shutdown(self):
         self.log.debug('shutdown device ' + self.device.id)
 
-        self.server_executor.shutdown(True)
-        self.kill_frida_servers()
-
         if self.device.type == 'remote':
             port_manager.release_port(self.forward_port)
             self.adb.clear_forward(self.forward_port)
@@ -315,3 +312,6 @@ class FridaThread(threading.Thread):
         if options.port:
             self.iptables.uninstall()
             self.adb.clear_reverse(options.port)
+
+        self.kill_frida_servers()
+        self.server_executor.shutdown()
