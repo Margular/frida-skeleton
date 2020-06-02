@@ -36,7 +36,7 @@ class WatchThread(threading.Thread):
             usb_devices_ids = [device.id for device in usb_devices]
 
             # devices strings from "adb devices"
-            adb_devices_strings = Shell().cmd_and_debug('adb devices', debug=False)['out'].split('\n')[1:]
+            adb_devices_strings = Shell().exec('adb devices', quiet=True).out.split('\n')[1:]
             adb_devices_strings = [_.split('\t')[0] for _ in adb_devices_strings]
 
             # we need to access these devices remotely
@@ -82,7 +82,9 @@ class WatchThread(threading.Thread):
     def shutdown(self):
         for frida_thread in self.frida_threads:
             if frida_thread.is_alive():
+                self.log.debug('waiting for {}'.format(frida_thread.device))
                 frida_thread.terminate()
 
         for frida_thread in self.frida_threads:
-            frida_thread.join()
+            while frida_thread.is_alive():
+                time.sleep(1)

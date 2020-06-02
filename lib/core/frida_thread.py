@@ -8,12 +8,14 @@ import re
 import sys
 import threading
 import time
+from concurrent.futures.thread import ThreadPoolExecutor
 
 import frida
 import requests
 
 from lib.core.options import options
 from lib.core.port_manager import port_manager
+from lib.core.project import Project
 from lib.core.settings import ROOT_DIR, FRIDA_SERVER_DEFAULT_PORT
 from lib.core.types import FakeDevice
 from lib.utils.adb import Adb
@@ -27,11 +29,13 @@ class FridaThread(threading.Thread):
     def __init__(self, device):
         super().__init__()
 
+        self.server_executor = ThreadPoolExecutor(max_workers=1)
         self.log = logging.getLogger(self.__class__.__name__ + '|' + device.id)
 
         if device.type == FakeDevice.type:
             # init remote device
-            self.log.debug('device {} does not support get_usb_device, changing to get_remote_device'.format(device.id))
+            self.log.debug('device {} does not support get_usb_device, changing to get_remote_device method'
+                           .format(device.id))
             self.forward_port = port_manager.acquire_port(excludes=[options.port])
             self.device = frida.get_device_manager().add_remote_device('127.0.0.1:{}'.format(self.forward_port))
             self.device.id = device.id
@@ -43,14 +47,14 @@ class FridaThread(threading.Thread):
         if device.type == FakeDevice.type:
             result = self.adb.forward(self.forward_port, FRIDA_SERVER_DEFAULT_PORT)
             # port has been used
-            if len(result['err'].strip()) > 0:
+            if result.err:
                 port_manager.release_port(self.forward_port)
                 raise RuntimeError('port {} has been used'.format(self.forward_port))
 
         if options.port:
             self.iptables = Iptables(self.adb, options.port)
 
-        self.arch = self.adb.unsafe_shell("getprop ro.product.cpu.abi")['out']
+        self.arch = self.adb.unsafe_shell("getprop ro.product.cpu.abi").out
         # maybe get 'arm64-v8a', 'arm-v7a' ...
         if 'arm64' in self.arch:
             self.arch = 'arm64'
@@ -157,7 +161,7 @@ class FridaThread(threading.Thread):
         server_path_xz = server_path + '.xz'
 
         # if not exist frida server then install it
-        if not self.adb.unsafe_shell("ls /data/local/tmp/" + self.server_name)['out']:
+        if not self.adb.unsafe_shell("ls /data/local/tmp/" + self.server_name).out:
             self.log.info('download {} from github ...'.format(self.server_name))
             with __lock__:
                 self.download('https://github.com/frida/frida/releases/download/{}/{}.xz'
@@ -180,14 +184,11 @@ class FridaThread(threading.Thread):
 
         for app in apps:
             if app.name == self.server_name:
-                self.adb.unsafe_shell('kill -9 {}'.format(app.pid), root=True, debug=False)
+                self.adb.unsafe_shell('kill -9 {}'.format(app.pid), root=True, quiet=True)
 
     def run_frida_server(self):
         self.adb.unsafe_shell('chmod +x /data/local/tmp/' + self.server_name)
-        threading.Thread(
-            target=self.adb.unsafe_shell,
-            args=('/data/local/tmp/{} -D'.format(self.server_name), True)
-        ).start()
+        self.server_executor.submit(self.adb.unsafe_shell, '/data/local/tmp/{} -D'.format(self.server_name), True)
 
         # waiting for frida server
         while True:
@@ -256,18 +257,13 @@ class FridaThread(threading.Thread):
             process = self.device.attach(self.device.spawn(app))
         else:
             process = self.device.attach(app)
-        js = 'Java.perform(function() {'
 
-        # load all scripts under folder 'scripts'
-        for (dirpath, dirnames, filenames) in os.walk(os.path.join(ROOT_DIR, 'scripts')):
-            for filename in filenames:
-                _ = open(os.path.join(dirpath, filename), encoding="utf-8").read()
-                if _.startswith(r'''/*Deprecated*/'''):
-                    continue
-                js += _
-                js += '\n'
+        js = Project.preload()
 
-        js += '});'
+        for project in Project.scan(os.path.join(ROOT_DIR, 'projects')):
+            js += project.load(app)
+
+        js += Project.postload()
         script = process.create_script(js)
         script.on('message', self.on_message(app))
         script.load()
@@ -305,8 +301,6 @@ class FridaThread(threading.Thread):
     def shutdown(self):
         self.log.debug('shutdown device ' + self.device.id)
 
-        self.kill_frida_servers()
-
         if self.device.type == 'remote':
             port_manager.release_port(self.forward_port)
             self.adb.clear_forward(self.forward_port)
@@ -314,3 +308,6 @@ class FridaThread(threading.Thread):
         if options.port:
             self.iptables.uninstall()
             self.adb.clear_reverse(options.port)
+
+        self.kill_frida_servers()
+        self.server_executor.shutdown()
