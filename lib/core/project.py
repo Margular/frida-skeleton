@@ -10,8 +10,8 @@ from attrdict import AttrDict
 
 from lib.core.settings import ROOT_DIR, PROJECT_CONFIG_FILENAME
 
-
 __lock__ = threading.Lock()
+
 
 class Project:
 
