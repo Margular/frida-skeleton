@@ -15,6 +15,7 @@ import requests
 
 from lib.core.options import options
 from lib.core.port_manager import port_manager
+from lib.core.project import Project
 from lib.core.settings import ROOT_DIR, FRIDA_SERVER_DEFAULT_PORT
 from lib.core.types import FakeDevice
 from lib.utils.adb import Adb
@@ -256,18 +257,13 @@ class FridaThread(threading.Thread):
             process = self.device.attach(self.device.spawn(app))
         else:
             process = self.device.attach(app)
-        js = 'Java.perform(function() {'
 
-        # load all scripts under folder 'scripts'
-        for (dirpath, dirnames, filenames) in os.walk(os.path.join(ROOT_DIR, 'scripts')):
-            for filename in filenames:
-                _ = open(os.path.join(dirpath, filename), encoding="utf-8").read()
-                if _.startswith(r'''/*Deprecated*/'''):
-                    continue
-                js += _
-                js += '\n'
+        js = Project.preload()
 
-        js += '});'
+        for project in Project.scan(os.path.join(ROOT_DIR, 'projects')):
+            js += project.load(app)
+
+        js += Project.postload()
         script = process.create_script(js)
         script.on('message', self.on_message(app))
         script.load()
