@@ -1,4 +1,8 @@
 var Bypass = {
+    /**
+     * Universal Android SSL Pinning Bypass #2
+     * https://techblog.mediaservice.net/2018/11/universal-android-ssl-pinning-bypass-2/
+     */
     universal: function () {
         var array_list = Java.use("java.util.ArrayList");
         var ApiClient = Java.use('com.android.org.conscrypt.TrustManagerImpl');
@@ -10,8 +14,10 @@ var Bypass = {
     },
 
     /**
-     * Android SSL Re-pinning frida script v0.2 030417-pier
+     * Universal Android SSL Pinning bypass with Frida
      * https://techblog.mediaservice.net/2017/07/universal-android-ssl-pinning-bypass-with-frida/
+     *
+     * UPDATE 20191605: Fixed undeclared var. Thanks to @oleavr and @ehsanpc9999 !
      * */
     byCert: function () {
         send("[.] Cert Pinning Bypass/Re-Pinning");
@@ -25,13 +31,14 @@ var Bypass = {
         var SSLContext = Java.use("javax.net.ssl.SSLContext");
 
         // Load CAs from an InputStream
-        send("[+] Loading our CA...");
+        send("[+] Loading our CA...")
         var cf = CertificateFactory.getInstance("X.509");
 
         try {
             var fileInputStream = FileInputStream.$new("/data/local/tmp/cert-der.crt");
         } catch (err) {
             send("[o] " + err);
+            return;
         }
 
         var bufferedInputStream = BufferedInputStream.$new(fileInputStream);
@@ -55,15 +62,17 @@ var Bypass = {
         tmf.init(keyStore);
         send("[+] Our TrustManager is ready...");
 
-        send("[+] Hijacking SSLContext methods now...");
-        send("[-] Waiting for the app to invoke SSLContext.init()...");
+        send("[+] Hijacking SSLContext methods now...")
+        send("[-] Waiting for the app to invoke SSLContext.init()...")
 
-        SSLContext.init.overload("[Ljavax.net.ssl.KeyManager;", "[Ljavax.net.ssl.TrustManager;",
-            "java.security.SecureRandom").implementation = function (a, b, c) {
+        SSLContext.init.overload(
+            "[Ljavax.net.ssl.KeyManager;", "[Ljavax.net.ssl.TrustManager;", "java.security.SecureRandom")
+            .implementation = function (a, b, c) {
             send("[o] App invoked javax.net.ssl.SSLContext.init...");
-            SSLContext.init.overload("[Ljavax.net.ssl.KeyManager;", "[Ljavax.net.ssl.TrustManager;",
-                "java.security.SecureRandom").call(this, a, tmf.getTrustManagers(), c);
+            SSLContext.init.overload(
+                "[Ljavax.net.ssl.KeyManager;", "[Ljavax.net.ssl.TrustManager;", "java.security.SecureRandom")
+                .call(this, a, tmf.getTrustManagers(), c);
             send("[+] SSLContext initialized with our custom TrustManager!");
-        };
+        }
     }
 };
