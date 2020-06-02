@@ -1,11 +1,4 @@
-/*
- * Description: A js file that defined many useful auto run javascript snippets
- * Author: Margular
- * Date: 2019-12-22
- * Version: 1.1
- */
-
-const Trace = {
+var Trace = {
     method : function (targetClassMethod) {
         var delim = targetClassMethod.lastIndexOf('.');
         if (delim === -1)
@@ -17,15 +10,16 @@ const Trace = {
         var hook = Java.use(targetClass);
         var overloadCount = hook[targetMethod].overloads.length;
 
-        LOG({ tracing: targetClassMethod, overloaded: overloadCount });
+        send({ tracing: targetClassMethod, overloaded: overloadCount });
 
         for (var i = 0; i < overloadCount; i++) {
             hook[targetMethod].overloads[i].implementation = function () {
-                var log = { '#': targetClassMethod, args: [] };
+                var log = {'#': targetClassMethod, args: []};
 
                 for (var j = 0; j < arguments.length; j++) {
                     var arg = arguments[j];
-                    // quick&dirty fix for java.io.StringWriter char[].toString() impl because frida prints [object Object]
+                    // quick&dirty fix for java.io.StringWriter char[].toString() impl
+                    // because frida prints [object Object]
                     if (j === 0 && arguments[j]) {
                         if (arguments[j].toString() === '[object Object]') {
                             var s = [];
@@ -46,16 +40,15 @@ const Trace = {
                 } catch (e) {
                     console.error(e);
                 }
-                LOG(log);
+                send(log);
                 return retval;
             }
         }
     },
 
     class : function (targetClass) {
-        var hook;
         try {
-            hook = Java.use(targetClass);
+            var hook = Java.use(targetClass);
         } catch (e) {
             console.error("trace class failed", e);
             return;
@@ -69,23 +62,23 @@ const Trace = {
             var methodStr = method.toString();
             var methodReplace = methodStr.replace(targetClass + ".", "TOKEN")
                 .match(/\sTOKEN(.*)\(/)[1];
-             parsedMethods.push(methodReplace);
+            parsedMethods.push(methodReplace);
         });
 
-        uniqBy(parsedMethods, JSON.stringify).forEach(function (targetMethod) {
+        Common.uniqBy(parsedMethods, JSON.stringify).forEach(function (targetMethod) {
             traceMethod(targetClass + '.' + targetMethod);
         });
     },
 
     classes: function (classes) {
-        classes.forEach(traceClass);
+        classes.forEach(Trace.class);
     },
 
     byRegexp: function (regexp) {
         Java.enumerateLoadedClasses({
             "onMatch": function (className) {
                 if (className.match(regexp)) {
-                    traceClass(className);
+                    Trace.class(className);
                 }
             },
             "onComplete": function () {

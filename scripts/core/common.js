@@ -1,11 +1,4 @@
-/*
- * Description: Common functions for common usage.
- * Author: Margular
- * Date: 2020-06-01
- * Version: 2.0
- */
-
-const Common = {
+var Common = {
     impl : function (method, func) {
         // store func to global
         if (global.hasOwnProperty("_func_index_"))
@@ -59,14 +52,12 @@ const Common = {
         impl += "return ret;\n";
         impl += "};\n";
 
-        console.log(impl);
-
         eval(impl);
     },
 
     printBacktrace : function () {
-        const android_util_Log = Java.use('android.util.Log');
-        const java_lang_Exception = Java.use('java.lang.Exception');
+        var android_util_Log = Java.use('android.util.Log');
+        var java_lang_Exception = Java.use('java.lang.Exception');
         // getting stacktrace by throwing an exception
         send(android_util_Log.getStackTraceString(java_lang_Exception.$new()));
     },

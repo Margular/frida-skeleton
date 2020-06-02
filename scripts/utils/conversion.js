@@ -1,11 +1,4 @@
-/*
- * Description: For data flow format conversion.
- * Author: Margular
- * Date: 2020-06-01
- * Version: 1.1
- */
-
-const Conversion = {
+var Conversion = {
     hex2bytes: function (hex) {
         for (var bytes = [], c = 0; c < hex.length; c += 2)
             bytes.push(parseInt(hex.substr(c, 2), 16));

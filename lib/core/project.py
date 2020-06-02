@@ -32,7 +32,7 @@ class Project:
 
     @classmethod
     def preload(cls) -> str:
-        js = 'Java.perform(function() {'
+        js = 'Java.perform(function() {\n'
 
         # recursively load js files in the script directory
         for (dirpath, dirnames, filenames) in os.walk(os.path.join(ROOT_DIR, 'scripts')):
@@ -68,7 +68,7 @@ class Project:
         # recursively load js files
         for (dirpath, dirnames, filenames) in os.walk(self.path):
             for filename in filenames:
-                if os.path.splitext(filename) != '.js':
+                if os.path.splitext(filename)[1] != '.js':
                     continue
                 js += open(os.path.join(dirpath, filename), encoding="utf-8").read() + '\n'
 
