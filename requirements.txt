@@ -1,5 +1,6 @@
 attrdict
 coloredlogs
 frida
+PyYAML
 requests
 urllib3

@@ -1,5 +1,5 @@
 var Format = {
-    pretty : function (obj) {
+    pretty: function (obj) {
         if (typeof obj === "string") {
             return obj;
         }

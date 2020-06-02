@@ -1,5 +1,5 @@
 var Trace = {
-    method : function (targetClassMethod) {
+    method: function (targetClassMethod) {
         var delim = targetClassMethod.lastIndexOf('.');
         if (delim === -1)
             return;
@@ -10,7 +10,7 @@ var Trace = {
         var hook = Java.use(targetClass);
         var overloadCount = hook[targetMethod].overloads.length;
 
-        send({ tracing: targetClassMethod, overloaded: overloadCount });
+        send({tracing: targetClassMethod, overloaded: overloadCount});
 
         for (var i = 0; i < overloadCount; i++) {
             hook[targetMethod].overloads[i].implementation = function () {
@@ -30,13 +30,13 @@ var Trace = {
                         }
                     }
                     //log.args.push({ i: j, o: arg, s: arg ? arg.toString(): 'null'});
-                    log.args.push(arg ? arg.toString(): 'null');
+                    log.args.push(arg ? arg.toString() : 'null');
                 }
 
                 var retval;
                 try {
                     retval = this[targetMethod].apply(this, arguments); // might crash (Frida bug?)
-                    log.returns = { val: retval, str: retval ? retval.toString() : null };
+                    log.returns = {val: retval, str: retval ? retval.toString() : null};
                 } catch (e) {
                     console.error(e);
                 }
@@ -46,7 +46,7 @@ var Trace = {
         }
     },
 
-    class : function (targetClass) {
+    class: function (targetClass) {
         try {
             var hook = Java.use(targetClass);
         } catch (e) {

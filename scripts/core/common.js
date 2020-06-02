@@ -1,5 +1,5 @@
 var Common = {
-    impl : function (method, func) {
+    impl: function (method, func) {
         // store func to global
         if (global.hasOwnProperty("_func_index_"))
             global["_func_index_"]++;
@@ -55,7 +55,7 @@ var Common = {
         eval(impl);
     },
 
-    printBacktrace : function () {
+    printBacktrace: function () {
         var android_util_Log = Java.use('android.util.Log');
         var java_lang_Exception = Java.use('java.lang.Exception');
         // getting stacktrace by throwing an exception
@@ -63,7 +63,7 @@ var Common = {
     },
 
     // remove duplicates from array
-    uniqBy : function (array, key) {
+    uniqBy: function (array, key) {
         var seen = {};
         return array.filter(function (item) {
             var k = key(item);
