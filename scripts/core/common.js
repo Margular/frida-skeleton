@@ -48,7 +48,7 @@ var Common = {
         else
             impl += ");\n";
 
-        impl += "send(\"" + funcDetail + " => \" + Format.pretty(ret));\n";
+        impl += "send(\"" + funcDetail + " => \" + " + _pretty_("ret") + ");\n";
         impl += "return ret;\n";
         impl += "};\n";
 
