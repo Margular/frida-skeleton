@@ -15,12 +15,13 @@ __lock__ = threading.Lock()
 
 class Project:
 
-    def __init__(self, path: str, name: str, regexp: str):
+    def __init__(self, path: str, name: str, regexp: str, spawn: bool):
         self.log = logging.getLogger(self.__class__.__name__ + '|' + name)
 
         self.path = path
         self.name = name
         self.regexp = regexp
+        self.spawn = spawn
 
     @classmethod
     def logger(cls):
@@ -52,7 +53,10 @@ class Project:
                 try:
                     config = AttrDict(yaml.safe_load(open(os.path.join(entry.path, PROJECT_CONFIG_FILENAME))))
                     if config.name and config.enable and config.regexp:
-                        yield Project(entry.path, config.name, config.regexp)
+                        yield Project(entry.path,
+                                      config.name,
+                                      config.regexp,
+                                      config.spawn if 'spawn' in config.keys() else False)
                 except yaml.YAMLError as e:
                     cls.logger().error('error in configuration file: {}'.format(e))
 
