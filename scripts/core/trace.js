@@ -74,7 +74,7 @@ var Trace = {
         classes.forEach(this.javaClassName);
     },
 
-    javaClassRegex: function (regexp) {
+    javaClassByRegex: function (regexp) {
         Java.enumerateLoadedClasses({
             "onMatch": function (className) {
                 if (className.match(regexp)) {
