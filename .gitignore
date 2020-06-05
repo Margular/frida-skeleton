@@ -176,3 +176,4 @@ logs/
 release/
 frida-server*
 *.swp
+.vscode
