@@ -256,11 +256,18 @@ class FridaThread(threading.Thread):
 
         js = Project.preload()
         spawn = options.spawn
+        projects = []
 
         for project in Project.scan(os.path.join(ROOT_DIR, 'projects')):
-            js += project.load(app)
+            projects.append(project)
             if project.spawn:
                 spawn = True
+
+        projects.sort(key=lambda p: p.priority)
+
+        for project in projects:
+            if project.enable:
+                js += project.load(app)
 
         js += Project.postload()
 

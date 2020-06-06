@@ -1,3 +1,2 @@
-name: 'default'
-enable: true
 regexp: '.*'
+priority: -100
