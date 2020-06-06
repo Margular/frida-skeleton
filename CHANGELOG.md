@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2020-06-02
+
+### Add
+
+* 新增项目概念，现在可以在projects目录下创建自己的项目
+* Javascript函数库新增namespace，每个内置函数库都有了自己的namespace，互不影响
+
+### Changed
+
+* 代码结构变化，Javascript函数库分为内置函数库和用户自定义函数库，scripts下为内置函数库，projects目录下为用户自定义函数库
+
 ## [2.5.0] - 2020-05-28
 
 ### Add
@@ -107,7 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 内置jni函数hook方法
 - 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/Margular/frida-skeleton/compare/v2.5.0...v3.0.0
 [2.5.0]: https://github.com/Margular/frida-skeleton/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/Margular/frida-skeleton/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/Margular/frida-skeleton/compare/v2.3.0...v2.4.0
