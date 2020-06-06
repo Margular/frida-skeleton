@@ -15,12 +15,15 @@ __lock__ = threading.Lock()
 
 class Project:
 
-    def __init__(self, path: str, name: str, regexp: str):
+    def __init__(self, path: str, enable:bool, name: str, regexp: str, spawn: bool, priority: int):
         self.log = logging.getLogger(self.__class__.__name__ + '|' + name)
 
         self.path = path
+        self.enable = enable
         self.name = name
         self.regexp = regexp
+        self.spawn = spawn
+        self.priority = priority
 
     @classmethod
     def logger(cls):
@@ -51,8 +54,13 @@ class Project:
             if entry.is_dir():
                 try:
                     config = AttrDict(yaml.safe_load(open(os.path.join(entry.path, PROJECT_CONFIG_FILENAME))))
-                    if config.name and config.enable and config.regexp:
-                        yield Project(entry.path, config.name, config.regexp)
+                    if config.regexp:
+                        yield Project(entry.path,
+                                      config.enable if 'enable' in config.keys() else True,
+                                      os.path.basename(entry.path),
+                                      config.regexp,
+                                      config.spawn if 'spawn' in config.keys() else False,
+                                      config.priority if 'priority' in config.keys() else 0)
                 except yaml.YAMLError as e:
                     cls.logger().error('error in configuration file: {}'.format(e))
 
@@ -73,3 +81,4 @@ class Project:
                 js += open(os.path.join(dirpath, filename), encoding="utf-8").read() + '\n'
 
         return js
+

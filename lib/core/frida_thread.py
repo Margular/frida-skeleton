@@ -253,22 +253,34 @@ class FridaThread(threading.Thread):
             raise RuntimeError('try to hook empty app name')
 
         self.log.info('hook app ' + app)
-        if options.spawn:
+
+        js = Project.preload()
+        spawn = options.spawn
+        projects = []
+
+        for project in Project.scan(os.path.join(ROOT_DIR, 'projects')):
+            projects.append(project)
+            if project.spawn:
+                spawn = True
+
+        projects.sort(key=lambda p: p.priority)
+
+        for project in projects:
+            if project.enable:
+                js += project.load(app)
+
+        js += Project.postload()
+
+        if spawn:
             process = self.device.attach(self.device.spawn(app))
         else:
             process = self.device.attach(app)
 
-        js = Project.preload()
-
-        for project in Project.scan(os.path.join(ROOT_DIR, 'projects')):
-            js += project.load(app)
-
-        js += Project.postload()
         script = process.create_script(js)
         script.on('message', self.on_message(app))
         script.load()
 
-        if options.spawn:
+        if spawn:
             self.device.resume(self.device.get_process(app).pid)
 
     def on_message(self, app: str):
