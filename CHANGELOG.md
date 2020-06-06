@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2020-06-06
+
+### Add
+
+* 新增spawn选项，现在可以根据选项全局spawn模式，或者在项目配置文件里面配置spawn为true
+* 新增项目优先级选项，数字越小越优先加载，用于hook有先后关系的场景，默认为0，默认工程为-100，为最优先
+
+### Changed
+
+* 默认工程的bypass代码更新，现在可以根据新老设备自动切换hook脚本，老设备需要自行上传证书到/data/local/tmp/cert-der.crt
+* Common.impl函数大改，现在通过指定对象hook而不是字符串
+
 ## [3.0.0] - 2020-06-02
 
 ### Add
@@ -118,7 +130,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 内置jni函数hook方法
 - 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/Margular/frida-skeleton/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/Margular/frida-skeleton/compare/v2.5.0...v3.0.0
 [2.5.0]: https://github.com/Margular/frida-skeleton/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/Margular/frida-skeleton/compare/v2.4.0...v2.4.1
