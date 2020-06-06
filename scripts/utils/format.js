@@ -12,7 +12,7 @@ var Format = {
      * @returns {string}
      */
     pretty: function (obj) {
-        if (obj === null) return null;
+        if (obj === null || obj === undefined) return obj;
 
         if (typeof obj === "string") {
             return obj;
