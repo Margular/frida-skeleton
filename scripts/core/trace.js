@@ -13,36 +13,7 @@ var Trace = {
         send(JSON.stringify({tracing: targetClassMethod, overloaded: overloadCount}));
 
         for (var i = 0; i < overloadCount; i++) {
-            hook[targetMethod].overloads[i].implementation = function () {
-                var log = {'#': targetClassMethod, args: []};
-
-                for (var j = 0; j < arguments.length; j++) {
-                    var arg = arguments[j];
-                    // quick&dirty fix for java.io.StringWriter char[].toString() impl
-                    // because frida prints [object Object]
-                    if (j === 0 && arguments[j]) {
-                        if (arguments[j].toString() === '[object Object]') {
-                            var s = [];
-                            for (var k = 0, l = arguments[j].length; k < l; k++) {
-                                s.push(arguments[j][k]);
-                            }
-                            arg = s.join('');
-                        }
-                    }
-                    //log.args.push({ i: j, o: arg, s: arg ? arg.toString(): 'null'});
-                    log.args.push(arg ? arg.toString() : 'null');
-                }
-
-                var retval;
-                try {
-                    retval = this[targetMethod].apply(this, arguments); // might crash (Frida bug?)
-                    log.returns = {val: retval, str: retval ? retval.toString() : null};
-                } catch (e) {
-                    console.error(e);
-                }
-                send(JSON.stringify(log));
-                return retval;
-            }
+            Common.impl(hook[targetMethod].overloads[i]);
         }
     },
 
