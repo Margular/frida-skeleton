@@ -54,7 +54,7 @@ var Common = {
             '\tvar sendString = "${method_full_name}(";\n' +
             '\tfor (var i = 0; i < arguments.length; i++) {\n' +
             '\t\tvar arg = arguments[i];\n' +
-            '\t\tsendString += JSON.stringify(arg);\n' +
+            '\t\tsendString += arg;\n' +
             '\t\tvar prettyArg = Format.pretty(arg);\n' +
             '\t\tif (prettyArg !== arg)\n' +
             '\t\t\tsendString += "|" + prettyArg;\n' +
@@ -65,7 +65,7 @@ var Common = {
             '\tsend(sendString);\n' +
             '\tvar ret = ${func_obj}.apply(this, arguments);\n' +
             '\tvar prettyRet = Format.pretty(ret);\n' +
-            '\tsendString += " => " + JSON.stringify(ret);\n' +
+            '\tsendString += " => " + ret;\n' +
             '\tif (ret !== prettyRet)\n' +
             '\t\tsendString += "|" + prettyRet;\n' +
             '\tsend(sendString);\n' +
