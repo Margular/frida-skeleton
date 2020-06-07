@@ -25,6 +25,6 @@ var Format = {
                 return validStr;
         }
 
-        return obj;
+        return JSON.stringify(Jav.describeObject(obj));
     }
 };
