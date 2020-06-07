@@ -65,11 +65,7 @@ class Project:
                     cls.logger().error('error in configuration file: {}'.format(e))
 
     def load(self, app: str) -> str:
-        # if app match regexp
-        if not re.search(self.regexp, app):
-            return ''
-
-        self.log.debug('loading...')
+        self.log.debug('loading script for {}...'.format(app))
 
         js = ''
 

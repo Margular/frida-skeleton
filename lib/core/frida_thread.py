@@ -260,21 +260,27 @@ class FridaThread(threading.Thread):
 
         for project in Project.scan(os.path.join(ROOT_DIR, 'projects')):
             projects.append(project)
-            if project.spawn:
-                spawn = True
 
         projects.sort(key=lambda p: p.priority)
 
         for project in projects:
             if project.enable:
+                # if app match regexp
+                if not re.search(project.regexp, app):
+                    continue
+
                 js += project.load(app)
+                if project.spawn:
+                    spawn = True
 
         js += Project.postload()
-
         if spawn:
             process = self.device.attach(self.device.spawn(app))
         else:
             process = self.device.attach(app)
+
+        # wait for the app to start otherwise it will not hook the java function
+        time.sleep(1)
 
         script = process.create_script(js)
         script.on('message', self.on_message(app))

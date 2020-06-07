@@ -1,3 +1,5 @@
+// thanks iddoeldor: https://github.com/iddoeldor/frida-snippets
+
 var Trace = {
     javaClassMethod: function (targetClassMethod) {
         var delim = targetClassMethod.lastIndexOf('.');
@@ -15,6 +17,8 @@ var Trace = {
         for (var i = 0; i < overloadCount; i++) {
             Common.impl(hook[targetMethod].overloads[i]);
         }
+
+        return overloadCount;
     },
 
     javaClassName: function (targetClass) {
@@ -36,9 +40,15 @@ var Trace = {
             parsedMethods.push(methodReplace);
         });
 
+        var countJson = {class: targetClass, methodCount: parsedMethods.length, overloadCount: 0};
+
         Common.uniqBy(parsedMethods, JSON.stringify).forEach(function (targetMethod) {
-            Trace.javaClassMethod(targetClass + '.' + targetMethod);
+            countJson.overloadCount += Trace.javaClassMethod(targetClass + '.' + targetMethod);
         });
+
+        send(JSON.stringify(countJson));
+
+        return countJson;
     },
 
     javaClassNames: function (classes) {
@@ -46,15 +56,22 @@ var Trace = {
     },
 
     javaClassByRegex: function (regexp) {
+        var info = {regexp: regexp.toString(), classCount: 0, methodCount: 0, overloadCount: 0};
+
         Java.enumerateLoadedClasses({
             "onMatch": function (className) {
                 if (className.match(regexp)) {
-                    Trace.javaClassName(className);
+                    var countJson = Trace.javaClassName(className);
+                    info.classCount++;
+                    info.methodCount += countJson.methodCount;
+                    info.overloadCount += countJson.overloadCount;
                 }
             },
             "onComplete": function () {
             }
         });
+
+        send(JSON.stringify(info));
     },
 
     jniName: function (mName) {
