@@ -12,11 +12,7 @@ var Format = {
      * @returns {string}
      */
     pretty: function (obj) {
-        if (obj === null || obj === undefined) return obj;
-
-        if (typeof obj === "string") {
-            return obj;
-        }
+        if (obj === null || obj === undefined || typeof obj !== 'object') return obj;
 
         // byte array
         if (obj.__proto__ === Java.array('byte', []).__proto__) {
