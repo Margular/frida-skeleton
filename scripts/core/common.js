@@ -157,7 +157,10 @@ var Common = {
         var propertyNames = [];
 
         while (true) {
-            propertyNames.push(Object.getOwnPropertyNames(o));
+            Object.getOwnPropertyNames(o).forEach(function (p) {
+                propertyNames.push(p);
+            });
+
             if (o.__proto__ === Object.prototype)
                 break;
             o = o.__proto__;
