@@ -15,7 +15,7 @@ var Common = {
 
         // return if this is not a overload
         if (!('_p' in method)) {
-            send('not a overload: ' + JSON.stringify(Common.items(method)));
+            send('not a overload: ' + JSON.stringify(Common.entries(method)));
             return;
         }
 
@@ -133,22 +133,36 @@ var Common = {
         return values;
     },
 
-    items: function (obj) {
+    entries: function (obj) {
         var o = obj;
-        var items = {};
+        var entries = {};
         while (o.__proto__ !== Object.prototype) {
             var keys = Object.keys(o);
             for (var i = 0; i < keys.length; i++) {
                 var key = keys[i];
-                items[key] = obj[key];
+                entries[key] = obj[key];
             }
             o = o.__proto__;
         }
 
-        return items;
+        return entries;
     },
 
-    itemsJson: function (obj) {
-        return JSON.stringify(this.items(obj));
+    entriesJson: function (obj) {
+        return JSON.stringify(this.entries(obj));
+    },
+
+    propertyNames: function (obj) {
+        var o = obj;
+        var propertyNames = [];
+
+        while (true) {
+            propertyNames.push(Object.getOwnPropertyNames(o));
+            if (o.__proto__ === Object.prototype)
+                break;
+            o = o.__proto__;
+        }
+
+        return propertyNames;
     }
 };
