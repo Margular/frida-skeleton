@@ -210,7 +210,7 @@ class FridaThread(threading.Thread):
 
             time.sleep(0.1)
 
-            new_apps = set(p.name for p in self.device.enumerate_processes())
+            new_apps = set(p for p in self.device.enumerate_processes())
             if not new_apps:
                 continue
 
@@ -222,7 +222,7 @@ class FridaThread(threading.Thread):
                     break
 
                 for regexp in options.regexps:
-                    if re.search(regexp, incremental_app):
+                    if re.search(regexp, incremental_app.name):
                         # waiting for app startup completely
                         time.sleep(0.1)
 
@@ -238,21 +238,17 @@ class FridaThread(threading.Thread):
                     break
 
                 for regexp in options.regexps:
-                    if re.search(regexp, decremental_app):
-                        self.log.info('app {} has died'.format(decremental_app))
+                    if re.search(regexp, decremental_app.name):
+                        self.log.info('app {} has died'.format(decremental_app.name))
                         break
 
             apps = new_apps
 
-    def hook(self, app: str):
+    def hook(self, app):
         if self._terminate:
             return
 
-        app = app.strip()
-        if not app:
-            raise RuntimeError('try to hook empty app name')
-
-        self.log.info('hook app ' + app)
+        self.log.info('hook app ' + app.name)
 
         js = Project.preload()
         spawn = options.spawn
@@ -266,28 +262,28 @@ class FridaThread(threading.Thread):
         for project in projects:
             if project.enable:
                 # if app match regexp
-                if not re.search(project.regexp, app):
+                if not re.search(project.regexp, app.name):
                     continue
 
-                js += project.load(app)
+                js += project.load(app.name)
                 if project.spawn:
                     spawn = True
 
         js += Project.postload()
         if spawn:
-            process = self.device.attach(self.device.spawn(app))
+            process = self.device.attach(self.device.spawn(app.name))
         else:
-            process = self.device.attach(app)
+            process = self.device.attach(app.pid)
 
         # wait for the app to start otherwise it will not hook the java function
         time.sleep(1)
 
         script = process.create_script(js)
-        script.on('message', self.on_message(app))
+        script.on('message', self.on_message(app.name))
         script.load()
 
         if spawn:
-            self.device.resume(self.device.get_process(app).pid)
+            self.device.resume(app.pid)
 
     def on_message(self, app: str):
         app_log = logging.getLogger('{}|{}|{}'.format(self.__class__.__name__, self.device.id, app))
