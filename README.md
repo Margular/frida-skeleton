@@ -57,7 +57,7 @@
 
 - Python3
 
-###### **安装步骤**
+###### 安装步骤
 
 1. 克隆本项目到本地
 
@@ -70,6 +70,14 @@ git clone https://github.com/Margular/frida-skeleton.git
 ```sh
 pip install -r requirements.txt
 ```
+
+###### 查看说明
+
+```sh
+python frida-skeleton.py -h
+```
+
+详细说明请移步[WIKI](https://github.com/Margular/frida-skeleton/wiki)
 
 ### 文件目录说明
 
