@@ -6,22 +6,19 @@ import argparse
 
 class Options:
     def __init__(self):
-        parser = argparse.ArgumentParser(description='a tool that helps you hook the program you want to hook '
-                                                     'according to regular expressions, more details see: '
+        parser = argparse.ArgumentParser(description='基于frida的安卓hook框架，提供了很多frida自身不支持的功能，'
+                                                     '将hook安卓变成简单便捷，人人都会的事情，项目地址：'
                                                      'https://github.com/Margular/frida-skeleton')
 
         parser.add_argument('regexps', nargs='*', default=[r'^com\.'],
-                            help=r'regular expressions that specifies the application names you want to hook, for '
-                                 r'example "^com\.baidu\.", if it is empty, hook all programs starting with com.')
+                            help=r'根据你指定的正则表达式去匹配包名hook对应的程序，支持多个正则表达式')
         parser.add_argument('-i', '--install', action='store_true',
-                            help='install frida server to /data/local/tmp automatically')
+                            help='自动从github安装对应版本和架构的frida-server到assets目录下，支持断点续传，下载完后自动运行')
         parser.add_argument('-p', '--port', type=int,
-                            help='reverse tcp port, if specified, manipulate iptables automatically, data flow: '
-                                 'mobile | all tcp streams -> mobile | random tcp port -> your pc/laptop | '
-                                 'tcp PORT, done by iptables and adb reverse')
+                            help='自动利用iptables和adb将所有的TCP流量重定向到PC的指定端口，这样就可以在本机监听该端口来抓包了')
         parser.add_argument('-s', '--spawn', action='store_true',
-                            help='spawn mode on, attach mode off, same as native frida')
-        parser.add_argument('-v', '--verbose', action='store_true', help='verbose output')
+                            help='开启frida的spawn模式并忽略项目配置文件中的spawn选项，开启此选项会导致被hook的进程自动重启')
+        parser.add_argument('-v', '--verbose', action='store_true', help='输出调试信息')
 
         args = parser.parse_args()
 
