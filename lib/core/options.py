@@ -12,6 +12,8 @@ class Options:
 
         parser.add_argument('regexps', nargs='*', default=[r'^com\.'],
                             help=r'根据你指定的正则表达式去匹配包名hook对应的程序，支持多个正则表达式')
+        parser.add_argument('-l', '--list', action='store_true', help='显示设备列表')
+        parser.add_argument('-d', '--devices', type=str, help='指定hook的设备，多个设备逗号隔开')
         parser.add_argument('-i', '--install', action='store_true',
                             help='自动从github安装对应版本和架构的frida-server到assets目录下，支持断点续传，下载完后自动运行')
         parser.add_argument('-p', '--port', type=int,
@@ -22,6 +24,8 @@ class Options:
 
         args = parser.parse_args()
 
+        self.list = args.list
+        self.devices = args.devices
         self.regexps = args.regexps
         self.install = args.install
         self.port = args.port

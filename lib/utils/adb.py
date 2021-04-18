@@ -5,7 +5,7 @@ from lib.utils.shell import Shell
 
 
 class Adb(Shell):
-    def __init__(self, serial=""):
+    def __init__(self, serial):
         super().__init__()
 
         self.serial = serial
@@ -16,6 +16,10 @@ class Adb(Shell):
     @classmethod
     def start_server(cls):
         return Shell().exec('adb start-server', supress_error=True)
+
+    @classmethod
+    def devices(cls):
+        return Shell().exec('adb devices', quiet=True)
 
     def check_root(self):
         if self.unsafe_shell('whoami').out == 'root':
