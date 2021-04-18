@@ -4,6 +4,7 @@
 import logging
 import os
 import signal
+import sys
 import time
 
 import coloredlogs
@@ -25,8 +26,14 @@ class MainExit(Exception):
 class FridaSkeleton:
 
     def __init__(self):
+        self.log = logging.getLogger(self.__class__.__name__)
+
+    def start(self):
         try:
-            self.log = logging.getLogger(self.__class__.__name__)
+            if options.list:
+                for device in Adb.devices().out.split('\n')[1:]:
+                    print(device)
+                sys.exit(0)
 
             level = logging.DEBUG if options.verbose else logging.INFO
             coloredlogs.install(level=level)
@@ -75,4 +82,5 @@ class FridaSkeleton:
 
 
 if __name__ == '__main__':
-    main = FridaSkeleton()
+    skeleton = FridaSkeleton()
+    skeleton.start()

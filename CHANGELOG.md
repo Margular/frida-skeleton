@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1] - 2021-04-18
+
+### Add
+
+* 新增指定设备hook的功能
+
+
 ## [3.2.0] - 2020-12-24
 
 ### Add
@@ -143,7 +150,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 内置jni函数hook方法
 - 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.2.1...HEAD
+[3.2.1]: https://github.com/Margular/frida-skeleton/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/Margular/frida-skeleton/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/Margular/frida-skeleton/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/Margular/frida-skeleton/compare/v2.5.0...v3.0.0

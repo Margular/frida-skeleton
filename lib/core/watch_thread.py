@@ -8,8 +8,9 @@ import time
 import frida
 
 from lib.core.frida_thread import FridaThread
+from lib.core.options import options
 from lib.core.types import FakeDevice
-from lib.utils.shell import Shell
+from lib.utils.adb import Adb
 
 
 class WatchThread(threading.Thread):
@@ -36,7 +37,7 @@ class WatchThread(threading.Thread):
             usb_devices_ids = [device.id for device in usb_devices]
 
             # devices strings from "adb devices"
-            adb_devices_strings = Shell().exec('adb devices', quiet=True).out.split('\n')[1:]
+            adb_devices_strings = Adb.devices().out.split('\n')[1:]
             adb_devices_strings = [_.split('\t')[0] for _ in adb_devices_strings]
 
             # we need to access these devices remotely
@@ -49,6 +50,10 @@ class WatchThread(threading.Thread):
                 remote_devices.append(new_device)
 
             for device in usb_devices + remote_devices:
+                # only hook specified devices
+                if options.devices and device.id not in options.devices:
+                    continue
+
                 duplicated = False
 
                 for t in self.frida_threads:
