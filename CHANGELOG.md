@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.2] - 2021-06-17
+
+### Fixed
+
+* 修复frida-server启动之前就attach进程导致报错的BUG
+
+
 ## [3.2.1] - 2021-04-18
 
 ### Add
@@ -150,7 +157,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 内置jni函数hook方法
 - 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.2.1...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.2.2...HEAD
+[3.2.2]: https://github.com/Margular/frida-skeleton/compare/v3.2.1...v3.2.2
 [3.2.1]: https://github.com/Margular/frida-skeleton/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/Margular/frida-skeleton/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/Margular/frida-skeleton/compare/v3.0.0...v3.1.0

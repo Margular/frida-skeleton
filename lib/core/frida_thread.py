@@ -185,6 +185,7 @@ class FridaThread(threading.Thread):
         for app in apps:
             if app.name == self.server_name:
                 self.adb.unsafe_shell('kill -9 {}'.format(app.pid), root=True, quiet=True)
+                time.sleep(0.5)
 
     def run_frida_server(self):
         self.adb.unsafe_shell('chmod +x /data/local/tmp/' + self.server_name)
@@ -274,10 +275,17 @@ class FridaThread(threading.Thread):
                     spawn = True
 
         js += Project.postload()
-        if spawn:
-            process = self.device.attach(self.device.spawn(name))
-        else:
-            process = self.device.attach(pid)
+
+        while True:
+            try:
+                if spawn:
+                    process = self.device.attach(self.device.spawn(name))
+                else:
+                    process = self.device.attach(pid)
+                break
+            except frida.ServerNotRunningError:
+                logging.warning("frida server not running, wait one second")
+                time.sleep(1)
 
         # wait for the app to start otherwise it will not hook the java function
         time.sleep(1)
