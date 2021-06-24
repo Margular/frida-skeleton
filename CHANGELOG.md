@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.3] - 2021-06-24
+
+### Add
+
+* 保存hook脚本的整个内容方便调试和查看
+
+### Changed
+
+* 在调用Trace.javaClassByRegex的时候默认跳过hook系统函数，通常来说我们希望hook的是APP自身的函数。可以通过第二个参数传入true强制hook系统函数
+
+### Fixed
+
+* 修复可能无法退出程序的BUG
+
 ## [3.2.2] - 2021-06-17
 
 ### Fixed
@@ -157,7 +171,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 内置jni函数hook方法
 - 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.2.2...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.2.3...HEAD
+[3.2.3]: https://github.com/Margular/frida-skeleton/compare/v3.2.2...v3.2.3
 [3.2.2]: https://github.com/Margular/frida-skeleton/compare/v3.2.1...v3.2.2
 [3.2.1]: https://github.com/Margular/frida-skeleton/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/Margular/frida-skeleton/compare/v3.1.0...v3.2.0
