@@ -276,6 +276,10 @@ class FridaThread(threading.Thread):
 
         js += Project.postload()
 
+        # save js content
+        os.makedirs(os.path.join(ROOT_DIR, 'js'), exist_ok=True)
+        open(os.path.join(ROOT_DIR, 'js', name + ".js"), 'w').write(js)
+
         while True:
             try:
                 if spawn:
