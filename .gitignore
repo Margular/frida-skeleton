@@ -177,3 +177,4 @@ release/
 frida-server*
 *.swp
 .vscode
+js/

@@ -10,7 +10,12 @@ var Trace = {
         var targetMethod = targetClassMethod.slice(delim + 1, targetClassMethod.length);
 
         var hook = Java.use(targetClass);
-        var overloadCount = hook[targetMethod].overloads.length;
+        try {
+            var overloadCount = hook[targetMethod].overloads.length;
+        } catch (e) {
+            // cannot read property 'overloads' of undefined
+            send(e.message)
+        }
 
         send(JSON.stringify({tracing: targetClassMethod, overloaded: overloadCount}));
 
@@ -22,11 +27,16 @@ var Trace = {
     },
 
     javaClassName: function (targetClass) {
+        // skip primitive types
+        if (['byte', 'char', 'double', 'float', 'int', 'long', 'short', 'void', 'boolean'].includes(targetClass)) {
+            return {class: targetClass, methodCount: 0, overloadCount: 0};
+        }
+
         try {
             var hook = Java.use(targetClass);
         } catch (e) {
-            console.error("trace class failed", e);
-            return;
+            send("invalid target class: " + targetClass);
+            return {class: targetClass, methodCount: 0, overloadCount: 0};
         }
 
         var methods = hook.class.getDeclaredMethods();
@@ -55,11 +65,24 @@ var Trace = {
         classes.forEach(this.javaClassName);
     },
 
-    javaClassByRegex: function (regexp) {
+    javaClassByRegex: function (regexp, forceSystem) {
         var info = {regexp: regexp.toString(), classCount: 0, methodCount: 0, overloadCount: 0};
 
         Java.enumerateLoadedClasses({
             "onMatch": function (className) {
+                if (className.startsWith('[')) {
+                    return;
+                }
+
+                // skip system packages
+                if (!forceSystem) {
+                    for (var i = 0; i < AndroidPackages.length; i++) {
+                        if (className.startsWith(AndroidPackages[i])) {
+                            return;
+                        }
+                    }
+                }
+
                 if (className.match(regexp)) {
                     var countJson = Trace.javaClassName(className);
                     info.classCount++;

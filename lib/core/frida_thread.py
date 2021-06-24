@@ -232,7 +232,7 @@ class FridaThread(threading.Thread):
                         try:
                             self.hook(int(pid), name)
                         except Exception as e:
-                            self.log.error(e)
+                            self.log.error('error occurred when hook {}@{}: {}'.format(name, pid, e))
                         finally:
                             break
 
@@ -276,6 +276,10 @@ class FridaThread(threading.Thread):
 
         js += Project.postload()
 
+        # save js content
+        os.makedirs(os.path.join(ROOT_DIR, 'js'), exist_ok=True)
+        open(os.path.join(ROOT_DIR, 'js', name + ".js"), 'w').write(js)
+
         while True:
             try:
                 if spawn:
@@ -284,6 +288,9 @@ class FridaThread(threading.Thread):
                     process = self.device.attach(pid)
                 break
             except frida.ServerNotRunningError:
+                if self._terminate:
+                    return
+
                 self.log.warning("frida server not running, wait one second")
                 time.sleep(1)
 
