@@ -232,7 +232,7 @@ class FridaThread(threading.Thread):
                         try:
                             self.hook(int(pid), name)
                         except Exception as e:
-                            self.log.error(e)
+                            self.log.error('error occurred when hook {}@{}: {}'.format(name, pid, e))
                         finally:
                             break
 
