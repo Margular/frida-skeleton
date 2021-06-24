@@ -284,6 +284,9 @@ class FridaThread(threading.Thread):
                     process = self.device.attach(pid)
                 break
             except frida.ServerNotRunningError:
+                if self._terminate:
+                    return
+
                 self.log.warning("frida server not running, wait one second")
                 time.sleep(1)
 
