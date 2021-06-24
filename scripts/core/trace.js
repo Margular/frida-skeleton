@@ -10,7 +10,12 @@ var Trace = {
         var targetMethod = targetClassMethod.slice(delim + 1, targetClassMethod.length);
 
         var hook = Java.use(targetClass);
-        var overloadCount = hook[targetMethod].overloads.length;
+        try {
+            var overloadCount = hook[targetMethod].overloads.length;
+        } catch (e) {
+            // cannot read property 'overloads' of undefined
+            send(e.message)
+        }
 
         send(JSON.stringify({tracing: targetClassMethod, overloaded: overloadCount}));
 
