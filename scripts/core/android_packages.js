@@ -1,0 +1,19 @@
+var AndroidPackages = [
+    'com.android.',
+    'com.sun.',
+    'com.google.android.',
+    'org.ccil.cowan.tagsoup.',
+    'org.w3c.',
+    'org.apache.',
+    'android.',
+    'libcore.',
+    'org.xml.',
+    'org.xmlpull.',
+    'org.json.',
+    'sun.',
+    'java.',
+    'javax.',
+    'dalvik.',
+    'kotlin.',
+    'androidx.'
+];
