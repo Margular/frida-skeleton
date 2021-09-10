@@ -119,7 +119,8 @@ class FridaThread(threading.Thread):
             return
 
         # get root
-        self.adb.root()
+        if not options.no_root:
+            self.adb.root()
 
         # close selinux
         self.adb.unsafe_shell('setenforce 0', root=True)
@@ -263,8 +264,12 @@ class FridaThread(threading.Thread):
 
             time.sleep(0.1)
 
+<<<<<<< HEAD
             new_apps = set('{}:{}'.format(p.pid, p.name)
                            for p in self.device.enumerate_processes())
+=======
+            new_apps = set('{}:{}'.format(p.pid, p.identifier) for p in self.device.enumerate_applications())
+>>>>>>> 822e6308e0a749a05218a5ae8372978a082a3855
             if not new_apps:
                 continue
 
