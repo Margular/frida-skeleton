@@ -56,10 +56,11 @@ class FridaThread(threading.Thread):
 
         self.adb.root()  # got root shell
         if self.adb.is_root is False:
+            # 只提示一下，针对某些设备没有root的情况，一般都要root后才能 运行，如果没有可能会异常
             self.log.warning(
                 " device : %s can't get root shell ,it may cause frida not work correctly!" % (device.id))
-            self._terminate = True  # need to terminate
-            return
+            # self._terminate = True  # need to terminate
+            # return
         self.log.info(
             " frida-server port: {}".format(self.frida_server_port))
         if options.serverport or device.type == FakeDevice.type:
@@ -264,12 +265,11 @@ class FridaThread(threading.Thread):
 
             time.sleep(0.1)
 
-<<<<<<< HEAD
-            new_apps = set('{}:{}'.format(p.pid, p.name)
-                           for p in self.device.enumerate_processes())
-=======
+            # new_apps = set('{}:{}'.format(p.pid, p.name)
+            #                for p in self.device.enumerate_processes())
+
             new_apps = set('{}:{}'.format(p.pid, p.identifier) for p in self.device.enumerate_applications())
->>>>>>> 822e6308e0a749a05218a5ae8372978a082a3855
+
             if not new_apps:
                 continue
 
