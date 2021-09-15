@@ -21,7 +21,8 @@ class Options:
         parser.add_argument('-n', '--no-root', action='store_true', help='不尝试使用adb root获取root权限，默认尝试')
         parser.add_argument('-s', '--spawn', action='store_true',
                             help='开启frida的spawn模式并忽略项目配置文件中的spawn选项，开启此选项会导致被hook的进程自动重启')
-        parser.add_argument("-sp", "--serverport", help="启动frida-server的启动端口采用随机生成，默认是：27042", action="store_true")
+        parser.add_argument("-r", "--random-port",help="随机生成frida-server监听端口，若不开启则使用默认端口27042",
+                            action='store_true')
         parser.add_argument('-v', '--verbose', action='store_true', help='输出调试信息')
 
         args = parser.parse_args()
@@ -33,7 +34,7 @@ class Options:
         self.port = args.port
         self.no_root = args.no_root
         self.spawn = args.spawn
-        self.serverport = args.serverport
+        self.random_port = args.random_port
         self.verbose = args.verbose
 
 

@@ -16,7 +16,7 @@ import requests
 from lib.core.options import options
 from lib.core.port_manager import port_manager
 from lib.core.project import Project
-from lib.core.settings import IS_WIN, ROOT_DIR, FRIDA_SERVER_DEFAULT_PORT
+from lib.core.settings import ROOT_DIR, FRIDA_SERVER_DEFAULT_PORT
 from lib.core.types import FakeDevice
 from lib.utils.adb import Adb
 from lib.utils.iptables import Iptables
@@ -27,56 +27,50 @@ __lock__ = threading.Lock()
 class FridaThread(threading.Thread):
 
     def __init__(self, device):
-        super().__init__(name="{}-{}".format(self.__class__.__name__, device.id))
+        super().__init__(
+            name="{}-{}".format(self.__class__.__name__, device.id))
         self.thread_tag = self.name
 
         self.server_executor = ThreadPoolExecutor(max_workers=1)
         self.log = logging.getLogger(self.thread_tag)
 
         self.frida_server_port = FRIDA_SERVER_DEFAULT_PORT
-        if options.serverport:
+
+        if options.random_port:
             self.frida_server_port = port_manager.acquire_port(
                 excludes=[FRIDA_SERVER_DEFAULT_PORT])
-            self.log.info(" Using random port for frida-server ")
-        self.frida_server_address = " -l 0.0.0.0:{}".format(
-            self.frida_server_port)
-        if options.serverport or device.type == FakeDevice.type:
+            self.log.info("pick random port {} for frida-server".format(
+                self.frida_server_port))
+
+        if options.random_port or device.type == FakeDevice.type:
             # init remote device
-            self.log.debug('device {} does not support get_usb_device, changing to get_remote_device method'
+            self.log.debug('device {} does not support get_usb_device, '
+                           'changing to get_remote_device method'
                            .format(device.id))
+
             self.forward_port = port_manager.acquire_port(
                 excludes=[options.port])
+
             self.device = frida.get_device_manager().add_remote_device(
                 '127.0.0.1:{}'.format(self.forward_port))
+
             self.device.id = device.id
         else:
             self.device = device
 
         self.adb = Adb(self.device.id)
 
-        self.adb.root()  # got root shell
-        if self.adb.is_root is False:
-            # 只提示一下，针对某些设备没有root的情况，一般都要root后才能 运行，如果没有可能会异常
-            self.log.warning(
-                " device : %s can't get root shell ,it may cause frida not work correctly!" % (device.id))
-            # self._terminate = True  # need to terminate
-            # return
-        self.log.info(
-            " frida-server port: {}".format(self.frida_server_port))
-        if options.serverport or device.type == FakeDevice.type:
-            result = self.adb.forward(
-                self.forward_port, self.frida_server_port)
+        self.log.info("frida-server port: {}".format(self.frida_server_port))
+        if options.random_port or device.type == FakeDevice.type:
+            result = self.adb.forward(self.forward_port, self.frida_server_port)
             # port has been used
             if result.err:
                 port_manager.release_port(self.forward_port)
-                raise RuntimeError(
-                    'port {} has been used'.format(self.forward_port))
+                raise RuntimeError('port {} has been used'.format(
+                    self.forward_port))
 
         if options.port:
-            if IS_WIN:
-                self.log.warning(' reverse port not support windows')
-            else:
-                self.iptables = Iptables(self.adb, options.port)
+            self.iptables = Iptables(self.adb, options.port)
 
         self.arch = self.adb.unsafe_shell("getprop ro.product.cpu.abi").out
         # maybe get 'arm64-v8a', 'arm-v7a' ...
@@ -97,7 +91,7 @@ class FridaThread(threading.Thread):
         self._terminate = False
 
     def run(self) -> None:
-        self.log.info(" start with hook device: id={}, name={}, type={}".format(
+        self.log.info("start with hook device: id={}, name={}, type={}".format(
             self.device.id, self.device.name, self.device.type))
 
         try:
@@ -109,8 +103,9 @@ class FridaThread(threading.Thread):
         try:
             self.shutdown()
         except Exception as e:
-            self.log.error('unexpected error occurred when shutdown device {}: {}'.format(
-                self.device.id, e))
+            self.log.error(
+                'unexpected error occurred when shutdown device {}: {}'
+                    .format(self.device.id, e))
 
         self.log.debug('device {} exit'.format(self.device.id))
 
@@ -128,12 +123,9 @@ class FridaThread(threading.Thread):
 
         # install iptables and reverse tcp port
         if options.port:
-            if IS_WIN:
-                self.log.warning(' reverse port not support windows')
-            else:
             # enable tcp connections between frida server and binding
-                self.iptables.install()
-                self.adb.reverse(options.port)
+            self.iptables.install()
+            self.adb.reverse(options.port)
 
         if options.install:
             self.install_frida_server()
@@ -183,7 +175,11 @@ class FridaThread(threading.Thread):
                     # download progress
                     done = int(50 * temp_size / total_size)
                     sys.stdout.write(
-                        "\r[{}{}] {:.2f}%".format('█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
+                        "\r[{}{}] {:.2f}%".format(
+                            '█' * done,
+                            ' ' * (50 - done),
+                            100 * temp_size / total_size)
+                    )
                     sys.stdout.flush()
 
         sys.stdout.write(os.linesep)
@@ -193,12 +189,17 @@ class FridaThread(threading.Thread):
         server_path_xz = server_path + '.xz'
 
         # if not exist frida server then install it
-        if not self.adb.unsafe_shell("ls /data/local/tmp/" + self.server_name).out:
+        if not self.adb.unsafe_shell(
+                "ls /data/local/tmp/" + self.server_name).out:
             self.log.info(
                 'download {} from github ...'.format(self.server_name))
+
             with __lock__:
-                self.download('https://github.com/frida/frida/releases/download/{}/{}.xz'
-                              .format(frida.__version__, self.server_name), server_path_xz)
+                self.download(
+                    'https://github.com/frida/frida/releases/download/{}/{}.xz'
+                        .format(frida.__version__, self.server_name),
+                    server_path_xz
+                )
 
             # extract frida server
             with open(server_path, 'wb') as f:
@@ -206,58 +207,57 @@ class FridaThread(threading.Thread):
                     f.write(xz.read())
 
             # upload frida server
+            self.log.info("pushing frida-server-{}...".format(self.server_name))
             self.adb.push(server_path, '/data/local/tmp/')
-            self.log.info("{}  install frida-server-{} succ ".format(
-                self.thread_tag, self.server_name))
 
     def kill_frida_servers(self):
         try:
             apps = self.device.enumerate_processes()
-        except (frida.ServerNotRunningError, frida.TransportError, frida.InvalidOperationError):
+        except (frida.ServerNotRunningError, frida.TransportError,
+                frida.InvalidOperationError):
             # frida server has not been started, no need to start
             return
 
         for app in apps:
             if app.name == self.server_name:
-                self.log.debug(" kill frida server : {} process".format(
-                    self.server_name))
+                self.log.debug("killing {}...".format(self.server_name))
                 self.adb.unsafe_shell(
                     'kill -9 {}'.format(app.pid), root=True, quiet=True)
                 time.sleep(0.5)
 
     def run_frida_server(self):
         self.adb.unsafe_shell('chmod +x /data/local/tmp/' + self.server_name)
-        if options.serverport:
-            self.server_executor.submit(
-                self.adb.unsafe_shell, '/data/local/tmp/{} {} -D'.format(self.server_name, self.frida_server_address), True)
+        self.server_executor.submit(
+            self.adb.unsafe_shell,
+            '/data/local/tmp/{} -l 127.0.0.1:{} -D'.format(
+                self.server_name, self.frida_server_port
+            ),
+            True
+        )
 
-        else:
-            self.server_executor.submit(
-                self.adb.unsafe_shell, '/data/local/tmp/{} -D'.format(self.server_name), True)
         # waiting for frida server
         max_try = 100
         while True:
             try:
                 if max_try < 0:
-                    self.log.info("{} can't run frida server ".format(
-                        self.thread_tag))
-                    self.terminate = True
+                    self.log.info(
+                        "{} can't run frida server ".format(self.thread_tag))
+                    self.terminate()
                     return
                 time.sleep(0.5)
                 if not self._terminate:
                     self.device.enumerate_processes()
-                    self.log.info(
-                        " connect to frida -server succ")
+                    self.log.info("frida-server connected")
                 break
-            except (frida.ServerNotRunningError, frida.TransportError, frida.InvalidOperationError):
+            except (frida.ServerNotRunningError, frida.TransportError,
+                    frida.InvalidOperationError):
                 max_try -= 1
                 continue
 
     def hook_apps(self):
         apps = set()
 
-        self.log.info(" filter: {}".format(
-            options.regexps))
+        self.log.info("filter: {}".format(options.regexps))
         # monitor apps
         while True:
             if self._terminate:
@@ -265,10 +265,8 @@ class FridaThread(threading.Thread):
 
             time.sleep(0.1)
 
-            # new_apps = set('{}:{}'.format(p.pid, p.name)
-            #                for p in self.device.enumerate_processes())
-
-            new_apps = set('{}:{}'.format(p.pid, p.identifier) for p in self.device.enumerate_applications())
+            new_apps = set('{}:{}'.format(p.pid, p.identifier) for p in
+                           self.device.enumerate_applications())
 
             if not new_apps:
                 continue
@@ -291,7 +289,8 @@ class FridaThread(threading.Thread):
                             self.hook(int(pid), name)
                         except Exception as e:
                             self.log.error(
-                                'error occurred when hook {}@{}: {}'.format(name, pid, e))
+                                'error occurred when hook {}@{}: {}'.format(
+                                    name, pid, e))
                         finally:
                             break
 
@@ -303,8 +302,7 @@ class FridaThread(threading.Thread):
 
                 for regexp in options.regexps:
                     if re.search(regexp, name):
-                        self.log.info(' {}[pid:{}] has died'.format(
-                            name, pid))
+                        self.log.info('{}[pid:{}] has died'.format(name, pid))
                         break
 
             apps = new_apps
@@ -313,13 +311,11 @@ class FridaThread(threading.Thread):
         if self._terminate:
             return
 
-
         js = Project.preload()
         spawn = options.spawn
         projects = []
         mode = "attach" if not spawn else "spawn"
-        self.log.info('  hook {}[pid={}] mode: {}'.format(
-            name, pid, mode))
+        self.log.info('hook {}[pid={}] mode: {}'.format(name, pid, mode))
 
         for project in Project.scan(os.path.join(ROOT_DIR, 'projects')):
             projects.append(project)
@@ -367,8 +363,8 @@ class FridaThread(threading.Thread):
             self.device.resume(pid)
 
     def on_message(self, app: str):
-        app_log = logging.getLogger('{}|{}|{}'.format(
-            self.__class__.__name__, self.device.id, app))
+        app_log = logging.getLogger(
+            '{}|{}|{}'.format(self.__class__.__name__, self.device.id, app))
 
         def on_message_inner(message, data):
             try:
@@ -380,8 +376,10 @@ class FridaThread(threading.Thread):
 
                     app_log.error(text)
                 else:
-                    text = message['payload'].strip(
-                    ) if message['type'] == 'send' else message.strip()
+                    if message['type'] == 'send':
+                        text = message['payload'].strip()
+                    else:
+                        text = message.strip()
 
                     if not text:
                         return
