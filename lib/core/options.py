@@ -18,8 +18,11 @@ class Options:
                             help='自动从github安装对应版本和架构的frida-server到assets目录下，支持断点续传，下载完后自动运行')
         parser.add_argument('-p', '--port', type=int,
                             help='自动利用iptables和adb将所有的TCP流量重定向到PC的指定端口，这样就可以在本机监听该端口来抓包了')
+        parser.add_argument('-n', '--no-root', action='store_true', help='不尝试使用adb root获取root权限，默认尝试')
         parser.add_argument('-s', '--spawn', action='store_true',
                             help='开启frida的spawn模式并忽略项目配置文件中的spawn选项，开启此选项会导致被hook的进程自动重启')
+        parser.add_argument("-r", "--random-port",help="随机生成frida-server监听端口，若不开启则使用默认端口27042",
+                            action='store_true')
         parser.add_argument('-v', '--verbose', action='store_true', help='输出调试信息')
 
         args = parser.parse_args()
@@ -29,7 +32,9 @@ class Options:
         self.regexps = args.regexps
         self.install = args.install
         self.port = args.port
+        self.no_root = args.no_root
         self.spawn = args.spawn
+        self.random_port = args.random_port
         self.verbose = args.verbose
 
 

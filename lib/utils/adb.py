@@ -31,7 +31,7 @@ class Adb(Shell):
 
     def unsafe_shell(self, command, root=False, quiet=False):
         return self.exec(r'''adb -s "{}" shell "{}{}"'''.format(
-            self.serial, 'su - -c ' if root and not self.is_root else '', command), quiet)
+            self.serial, 'su -c ' if root and not self.is_root else '', command), quiet)
 
     def push(self, src, dst):
         return self.exec('adb -s "{}" push "{}" "{}"'.format(self.serial, src, dst))
