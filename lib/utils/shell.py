@@ -4,7 +4,7 @@
 import logging
 from subprocess import Popen, PIPE
 
-from attrdict import AttrDict
+from thirdparty.attrdict import AttrDict
 
 
 class Shell:
