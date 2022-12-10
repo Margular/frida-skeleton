@@ -1,4 +1,4 @@
-attrdict
+six
 coloredlogs
 frida
 PyYAML

@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
-import re
 import threading
 
 import yaml
-from attrdict import AttrDict
 
 from lib.core.settings import ROOT_DIR, PROJECT_CONFIG_FILENAME
+from thirdparty.attrdict import AttrDict
 
 __lock__ = threading.Lock()
 
