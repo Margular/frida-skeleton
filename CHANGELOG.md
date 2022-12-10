@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3] - 2022-12-10
+
+### Add
+
+* 新增--no-root选项，有的设备不支持adb root
+* frida-server使用随机端口绕过常规检测
+* 在初始化FridaThread时校验设备是否root
+
+### Changed
+
+* 使用enumerate_applications替换enumerate_processes
+
+### Fixed
+
+* 修复有的su不支持后面跟一个-
+* attrdict本地模块化以兼容3.10及以上版本
+
 ## [3.2.3] - 2021-06-24
 
 ### Add
@@ -171,7 +188,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 内置jni函数hook方法
 - 良好的可扩展性
 
-[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.2.3...HEAD
+[Unreleased]: https://github.com/Margular/frida-skeleton/compare/v3.3...HEAD
+[3.3]: https://github.com/Margular/frida-skeleton/compare/v3.2.3...v3.3
 [3.2.3]: https://github.com/Margular/frida-skeleton/compare/v3.2.2...v3.2.3
 [3.2.2]: https://github.com/Margular/frida-skeleton/compare/v3.2.1...v3.2.2
 [3.2.1]: https://github.com/Margular/frida-skeleton/compare/v3.2.0...v3.2.1
